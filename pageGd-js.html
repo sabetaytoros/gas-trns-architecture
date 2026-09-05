@@ -1,0 +1,25 @@
+<script>
+  let nCyle = 1
+  const MAX_RUNNING_TIME = 360000//1 * mn
+  const element = document.getElementById("demo");
+  const changeInterval = setInterval(refreshPage, MAX_RUNNING_TIME);
+  element.innerHTML +=  " inSesion Cycle started "
+  function refreshPage() {
+    google.script.run
+    .withSuccessHandler(onSuccesTestChangeValues)
+    .getTestChangeValues()
+  }    
+  function onSuccesTestChangeValues(flg) {
+    let today = new Date()
+    let t = today.toLocaleTimeString('en-US');          
+    element.innerHTML += t + ' ' + nCyle + ' flg = ' + flg 
+    if (flg) { 
+      nCyle++ 
+    } else {
+      element.innerHTML += 'inCircle Cyle finished windows must be closed' 
+      clearInterval(changeInterval)
+  //    window.close();
+    } 
+   } 
+</script>
+

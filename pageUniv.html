@@ -1,0 +1,20 @@
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <script>
+      const MAX_GSRUNNING_TIME = 720000// 12 DAKIKA saate 5 defa
+      runProcess()
+      intervalId = setInterval(runProcess, MAX_GSRUNNING_TIME); 
+      function runProcess() {
+        google.script.run
+          .processUniEvent();
+      }
+
+    </script>
+  </head>
+  <body>
+    <h3>Universal interval starts </h3>
+  </body>
+</html>

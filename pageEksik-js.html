@@ -1,0 +1,33 @@
+<script>
+  const flgEnum = { FSTRT: 0, FCONT: 1, FTIMEOUT: 2, FEND : 3, FHLDY : 4, FGNSON : 5}
+  const MAX_GSRUNNING_TIME = 720000// 6 DAKIKA
+  const element = document.getElementById("demo");
+  const mdInterval = setInterval(refreshPage, MAX_GSRUNNING_TIME);
+  element.innerHTML +=  " Mıssıng Day interval starting "
+  function refreshPage() { 
+    google.script.run
+      .withSuccessHandler(onMisDaySuccess)
+      .procMisDay()
+      .withfailureHandler(onMisDayFailure)
+  }
+  function onMisDaySuccess(info) {
+    element.innerHTML +=  info.scrty
+    if (info.flg == flgEnum.FEND) {      
+      element.innerHTML += "<br> flg = FEND All securities finished interval cleared window close"   
+      clearInterval(mdInterval)
+      window.close = function () {
+        window.setTimeout(function() {
+          google.script.host.close();
+        }, 9);
+      };
+    } else if (info.flg == flgEnum.FGNSON) {
+        element.innerHTML += "<br> flg = FGNSON processSecurityGunsonu will be executed "
+    } else if (info.flg == flgEnum.FCONT){
+        element.innerHTML += "<br> flg = FCONT OHLC values assigning "
+    }
+   }
+   function onMisDayFailure(e) {
+      element.innerHTML +=  "<br> procMisDay fails"
+
+   }
+</script>

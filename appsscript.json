@@ -1,0 +1,33 @@
+{
+  "timeZone": "Asia/Jerusalem",
+  "dependencies": {
+  },
+  "webapp": {
+    "access": "MYSELF",
+    "executeAs": "USER_DEPLOYING"
+  },
+  "exceptionLogging": "STACKDRIVER",
+  "runtimeVersion": "V8",
+  "sheets": {
+    "macros": [{
+      "menuName": "ohlcmacro",
+      "functionName": "ohlcmacro"
+    }, {
+      "menuName": "ohlcmcr",
+      "functionName": "ohlcmcr"
+    }, {
+      "menuName": "ohlcmcr1",
+      "functionName": "ohlcmcr1"
+    }, {
+      "menuName": "DZLTB3",
+      "functionName": "DZLTB3"
+    }, {
+      "menuName": "DZLTb3",
+      "functionName": "DZLTb3",
+      "defaultShortcut": "Ctrl+Alt+Shift+1"
+    }, {
+      "menuName": "moverowData",
+      "functionName": "moverowData"
+    }]
+  }
+}

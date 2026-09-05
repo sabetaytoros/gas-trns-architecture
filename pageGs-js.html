@@ -1,0 +1,27 @@
+<script>
+  const flgEnum = { FSTRT: 0, FCONT: 1, FTIMEOUT: 2, FEND : 3, FHLDY : 4, FGNSON : 5, FERGNSON: 6}
+  const MAX_GSRUNNING_TIME = 720000// 12 DAKIKA
+  const element = document.getElementById("demo");
+  const gsInterval = setInterval(refreshPage, MAX_GSRUNNING_TIME);
+  element.innerHTML +=  " interval starting "
+
+  function refreshPage() {
+    google.script.run
+      .withSuccessHandler(onSecurityGunSonu)
+      .processSecurityGunsonu(flgEnum.FCONT)
+      .withfailureHandler(onFailureGunSonu)
+  } 
+  function onSecurityGunSonu(info) {
+    element.innerHTML += info.flg + ' OnsecurityGunsonu function succes ' 
+    if (info.flg == flgEnum.FCONT) {      
+      element.innerHTML += info.scrty + "  security gun sonu finished \n: "
+    } else {
+      element.innerHTML += " else All securities finished interval cleared windows close "   
+      clearInterval(gsInterval)
+      google.script.host.close();
+    } 
+  }  
+  function onFailureGunSonue(e) {
+    element.innerHTML = 'fails'
+  }
+</script>

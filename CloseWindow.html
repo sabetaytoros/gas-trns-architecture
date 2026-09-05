@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <style>
+      /* Your existing CSS remains the same */
+      body {
+        font-family: Arial, sans-serif;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        margin: 0;
+        background-color: #f0f0f0;
+      }
+      .message {
+        text-align: center;
+        padding: 20px;
+        background-color: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="message">
+      <h2>Task Completed</h2>
+      <p>Press Enter to close this window.</p>
+    </div>
+
+    <script>
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          // Proper closing method for GAS dialogs/sidebars
+          google.script.run.setWindowClosed()
+          google.script.host.close();
+          
+          // Optional: Force close after 500ms if standard method fails
+          setTimeout(() => {
+            try { google.script.host.close(); } 
+            catch(e) { window.top.close(); }
+          }, 500);
+        }
+      });
+    </script>
+  </body>
+  </body>
+</html>
+
+
