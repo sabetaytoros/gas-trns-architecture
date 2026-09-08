@@ -12,7 +12,7 @@ function drvStart() {
 Logger.log('Start')
 
   userProp.deleteProperty(JOB_INITIALIZED_KEY);
-  BatchType = flgBt.FHAFTASONU
+  //BatchType = flgBt.FHAFTASONU
   startBatchProcess()
 }
 
@@ -33,7 +33,8 @@ function startBatchProcess() {
     userProp.setProperty(REMAINING_TABS_KEY, JSON.stringify(tabNames));
     userProp.setProperty(JOB_INITIALIZED_KEY, 'TRUE'); // Lock initialization
     Logger.log("Initialized job with " + tabNames.length + " total tabs.");
-  } 
+  } else Trns.Holiday = userProp.getProperty('IS_HOLIDAY')
+  Logger.log('Trns.Holiday %s', Trns.Holiday)
   // 2. ADIM: SONRAKİ TETİKLENMELERDE HAFIZADAKİ LİSTEYİ OKU
   const savedRemaining = userProp.getProperty(REMAINING_TABS_KEY);
   if (savedRemaining) {
@@ -153,10 +154,13 @@ function scheduleContinuation() {
 function runInitialSetup() {
   Logger.log("Running initial setup... (e.g., clearing master logs, fetching API auth, locking sheets)");
   userProp.deleteProperty('UPDATE_KEBIR_PAGE');
+  userProp.deleteProperty('IS_HOLIDAY')
   if (BatchType == flgBt.FGUNSONU) {
     enSureGunSonu()
     getSecNamesfromOrderSheet()
     orderSnapShot()
+    isHoliday()
+    userProp.setProperty('IS_HOLIDAY', Trns.Holiday ? 'TRUE' :'FALSE')
   }
 }
 /**

@@ -5,7 +5,11 @@ const flgEnum = { FSTRT: 0, FCONT: 1, FTIMEOUT: 2, FEND: 3, FHLDY: 4, FGNSON: 5,
 const flgName = ["FSTRT", "FCONT", "FTIMEOUT", "FEND","FHLDY","FGNSON", "FERGNSON", "FIDLE", "FPLVSTRT","FPLVEND","FDAYINIT"];
 const GSMAX_RUNNING_TIME = 5.5 * 60 * 1000
 const EPS_TIME = 60000
+function testHoliday(){
+  Trns.trs()
+   processHoliDay() 
 
+}
 
 /**
  * Trns.trs mimarisini önce Aktif Sayfa, sonra 'Kebir' sayfası için test eder.
@@ -240,13 +244,17 @@ function enSureGunSonu() {
 function processHoliDay() {
   if (Trns.trs.getRange('E1').isBlank()) {
     Logger.log('Name %s', Trns.trs.getName())
-    var c = Trns.trs.getRange('Kebir!G1').getValue()
+    var c = Trns.trs.getRange('Kebir!G1').getValue()    
+    Logger.log('c '+c)
+    srng = Trns.trs.getRange(13,c-1).getA1Notation()
+    copyCell(srng, 'E1')
     Trns.trs.getRange(13, c).deleteCells(SpreadsheetApp.Dimension.COLUMNS);
     Trns.trs.getRange(14, c - 1, 7, 1)
       .deleteCells(SpreadsheetApp.Dimension.COLUMNS);
     Trns.trs.getRange(2, c - 1, 5, 1)
       .deleteCells(SpreadsheetApp.Dimension.COLUMNS);
-    Trns.trs.getRange('E1').setValue(new Date())
+    delete nextcell.cache;
+    copyCell(srng,('A'+nextcell()))
   }
 }
 /*****************************************************************************/
@@ -299,10 +307,10 @@ const DAYTIME = 24 * 3600 * 1000
 
 /****************************************************************************/
 function isHoliday() {
-  Ara = true
+  Trns.Holiday = false
+  if (BatchType == flgBt.FHAFTASONU) return
   for (s = 4; s < 7; s++) {
     Trns.trs = Trns.sht.getSheets()[s];
-    //Trns.bindTab(Trns.sht.getSheets()[s])
     var c = Trns.trs.getRange('Kebir!G1').getValue()
     v = abs(Trns.trs.getRange(14, c).getValue())
     if (v > 0.000) {
@@ -312,7 +320,6 @@ function isHoliday() {
     Trns.Holiday = true
   }
 }
-
 /****************************************************************************/
 function getStartingPoint() {
   var sNo = userProp.getProperty('ACTIVE_SHEETNO')

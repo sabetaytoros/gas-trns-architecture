@@ -8,7 +8,7 @@ const ibkrFee = 2.5
 var Ara = false
 
 // Array holding the names of the sheets to exclude from the execution
-const exclude = ["Kebir", "Orders", "Gunluk", "Copy", "QBTS+","AR(1)Sml"];
+const exclude = ["Kebir", "Orders", "Gunluk", "Test", "QBTS+","AR(1)Sml"];
 const trnType = { tUpdNrm: 0, tUpdShort: 1, tTrnsNrm: 2, tTrnsShort: 3 }
 const trState = { Buy: 0, Sell: 1, Info : 2, fBuy : 3 }
 const rtax =  columnLetterToNumber('S')
