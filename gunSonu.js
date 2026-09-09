@@ -5,10 +5,12 @@ const flgEnum = { FSTRT: 0, FCONT: 1, FTIMEOUT: 2, FEND: 3, FHLDY: 4, FGNSON: 5,
 const flgName = ["FSTRT", "FCONT", "FTIMEOUT", "FEND","FHLDY","FGNSON", "FERGNSON", "FIDLE", "FPLVSTRT","FPLVEND","FDAYINIT"];
 const GSMAX_RUNNING_TIME = 5.5 * 60 * 1000
 const EPS_TIME = 60000
+
 function testHoliday(){
   Trns.trs()
   Trns.Holiday = isHoliday()
   Logger.log('Trns.Holiday '+ Trns.Holiday)
+  Logger.log('kbrG1 '+ Trns.Kbr)
   // processHoliDay() 
 
 }
@@ -76,7 +78,7 @@ function test_Trns_Architecture() {
   console.log("3. Filtrelenmiş Sekmeler:", activeSheets);
 
   // 4. TEST: Kebir!G1 Hücresini Okuma (Eski 'sht' mantığı)
-  const kebirValue = Trns.sht.getRange('Kebir!G1').getValue();
+  const kebirValue = Trns.kbr;
   console.log("4. Kebir!G1 Değeri : " + kebirValue);
 
   console.log("=== TEST BAŞARIYLA TAMAMLANDI ===");
@@ -133,7 +135,7 @@ function testperiod() {
   Logger.log('shtName %s ordNAME %s', Trns.sName, Trns.ord.getName())
   CommonProcess()
   return
-  //newPeriod( Trns.trs.getRange('Kebir!G1').getValue() )
+  //newPeriod( Trns.kbr )
 
     ac = columnLetterToNumber('Fk')
     Logger.log('ac %s ', ac)
@@ -160,7 +162,7 @@ function CommonProcess() {
   delete nextcell.cache;
   setOrderRow()
   processLowHigh();
-  newPeriod(Trns.trs.getRange('Kebir!G1').getValue() )
+  newPeriod(Trns.kbr )
   processDateBlock(Trns);
   Trns.trs.getRange('E1').setValue(new Date())
   setCycle()
@@ -245,14 +247,13 @@ function enSureGunSonu() {
 function processHoliDay() {
   if (Trns.trs.getRange('E1').isBlank()) {
     Logger.log('Name %s', Trns.trs.getName())
-    var c = Trns.trs.getRange('Kebir!G1').getValue()    
-    Logger.log('c '+c)
-    srng = Trns.trs.getRange(13,c-1).getA1Notation()
+    var c = Trns.kbr - 1   
+    srng = Trns.trs.getRange(13,c).getA1Notation()
     copyCell(srng, 'E1')
-    Trns.trs.getRange(13, c).deleteCells(SpreadsheetApp.Dimension.COLUMNS);
-    Trns.trs.getRange(14, c - 1, 7, 1)
+    Trns.trs.getRange(13, Trns.kbr).deleteCells(SpreadsheetApp.Dimension.COLUMNS);
+    Trns.trs.getRange(14, c , 7, 1)
       .deleteCells(SpreadsheetApp.Dimension.COLUMNS);
-    Trns.trs.getRange(2, c - 1, 5, 1)
+    Trns.trs.getRange(2, c , 5, 1)
       .deleteCells(SpreadsheetApp.Dimension.COLUMNS);
     delete nextcell.cache;
     copyCell(srng,('A'+nextcell()))
@@ -308,11 +309,10 @@ const DAYTIME = 24 * 3600 * 1000
 
 /****************************************************************************/
 function isHoliday() {
-  if (BatchType == flgBt.FHAFTASONU) return false
-  var c = Trns.trs.getRange('Kebir!G1').getValue()  
+  if (BatchType == flgBt.FHAFTASONU) return false 
   for (s = 4; s < 7; s++) {
     Trns.trs = Trns.sht.getSheets()[s];
-    v = abs(Trns.trs.getRange(14, c).getValue())
+    v = abs(Trns.trs.getRange(14, Trns.kbr).getValue())
     if (v > 0.000) return false
   }    
   return true
@@ -440,8 +440,7 @@ function singleNext(r) {
 /************************************************************************************************/
 function setChart() {
   var sr = nextcell()
-  src = Trns.trs.getRange(13, Trns.trs.getRange('Kebir!G1').getValue() - 1)
-    .getA1Notation()
+  src = Trns.trs.getRange(13, Trns.kbr - 1).getA1Notation()
   let sd = new Date(Trns.trs.getRange(src).getValue())
   let cd = new Date(Trns.trs.getRange(sr, 1).getValue())
   //Logger.log('sd %s cd %s ', sd, cd)
@@ -459,7 +458,7 @@ function setChart() {
     Trns.trs.getRange(s).insertCells(SpreadsheetApp.Dimension.ROWS);
     copyFormatRange(Trns.trs.getRange(sr, 1, 1, 6).getA1Notation()
       , Trns.trs.getRange(sr1, 1).getA1Notation())
-    src = Trns.trs.getRange(13, Trns.trs.getRange('Kebir!G1').getValue() - 1).getA1Notation()
+    src = Trns.trs.getRange(13, Trns.kbr - 1).getA1Notation()
     dst = Trns.trs.getRange(sr, 1).getA1Notation()
    // Logger.log("src %s dst %s",src,dst)
     copyCell(src, dst)
@@ -984,15 +983,14 @@ function processDateBlock(Trns) {
 
 /*****************************************************************************/
 function transactionRatios () {
-  var RTrns = AbsGetUnvRange(Trns, 18, Trns.trs.getRange('Kebir!G1').getValue())
+  var RTrns = AbsGetUnvRange(Trns, 18, Trns.kbr)
   //  Logger.log('transactionRatios RTrns %s', Trns.trs.getRange(RTrns).getA1Notation())
   if (Trns.trs.getRange(RTrns).isBlank())
     Trns.trs.getCurrentCell().offset(0, 1).copyTo(Trns.trs.getActiveRange()
       , SpreadsheetApp.CopyPasteType.PASTE_NORMAL, false);
   else {
     /*****************Transaction Ratio */
-    var c = Trns.trs.getRange('Kebir!G1').getValue()
-    Rng = Trns.trs.getRange(15, c - 1).getA1Notation()
+    Rng = Trns.trs.getRange(15, Trns.kbr - 1).getA1Notation()
     var sFrm = '=(' + Rng + '-' + RTrns + ')/' + RTrns
     Trns.trs.getCurrentCell().setFormula(sFrm);
     Trns.trs.getCurrentCell().setNumberFormat('#,##0.0000')
@@ -1010,10 +1008,9 @@ function updateSonucSatiri() {
 }
 /*****************************************************************************/
 function updateKebirPage() {
-  Trns.kbr = Trns.sht.getSheets()[Kebir];
-  Trns.sht.setActiveSheet(Trns.kbr);
-  var cv = BatchType == flgBt.FGUNSONU ? parseInt(Trns.kbr.getRange('G1').getValue()) - 1 : 12
-  Trns.kbr.getRange('G1').setValue(cv);
+  Trns.trs(Trns.sht.getSheets()[Kebir]) ;
+  var cv = BatchType == flgBt.FGUNSONU ? Trns.kbr - 1 : 12
+  Trns.trs.getRange(Trns.kbr).setValue(cv);
   setProp("GUNSONU_PRC",flgEnum.FEND,false)
   setProp('POLL_VALUES', flgEnum.FPLVSTRT,false)  
   setProp('IDLE.STATE', flgEnum.FIDLE,false)
@@ -1052,15 +1049,14 @@ function checkColor(r, c, v, t) { // row, col,val, {Min or maX}
 
 /*****************************************************************************/
 function processLowHigh() {
-  let c = Trns.trs.getRange('Kebir!G1').getValue()
-  let m = c - 1
+  let m = Trns.kbr - 1
   let dst = Trns.trs.getRange(2, m).getA1Notation()
-  //Logger.log('c %s m %s dst %s', c, m, dst)
+  //Logger.log('c %s m %s dst %s', Trns.kbr, m, dst)
   if (Trns.trs.getRange(dst).isBlank()) {
     copyCellNormal('F2:F6', dst)
-    dst = Trns.trs.getRange(2, c).getA1Notation()
+    dst = Trns.trs.getRange(2, Trns.kbr).getA1Notation()
     copyFormatRange('F2:F6', dst)
-    dst = Trns.trs.getRange(3, c).getA1Notation()
+    dst = Trns.trs.getRange(3, Trns.kbr).getA1Notation()
     let sFrm = '=(F3 -' + dst + ')/' + dst
     Trns.trs.getRange('D4').setFormula(sFrm) // Previos Day open dif
     dst = Trns.trs.getRange(rlw, m, 1, 10).getA1Notation()
@@ -1069,17 +1065,17 @@ function processLowHigh() {
     Trns.trs.getRange('F7').setFormula(sFrm) // Son on gunun Lowu
     sFrm = '=Average(' + dst + ')'
     Trns.trs.getRange('F16').setFormula(sFrm)  // Lowlarin ortalamasi  
-    dst = Trns.trs.getRange(rhg, c - 1, 1, 10).getA1Notation()
+    dst = Trns.trs.getRange(rhg, m, 1, 10).getA1Notation()
     sFrm = 'max(' + dst + ')'
     Trns.trs.getRange('F8').setFormula(sFrm)
     sFrm = '=Average(' + dst + ')'
-    checkColor(rhg,c,Trns.trs.getRange('F8').getDisplayValue(), "X")
+    checkColor(rhg,Trns.kbr,Trns.trs.getRange('F8').getDisplayValue(), "X")
     Trns.trs.getRange('F17').setFormula(sFrm)
     formatRange('B3', 'F7:F8')
     formatRange('B3', 'F16:F17')
     // verify today Loww and High
-    setCellHighColor(c)
-    setCellLowColor(c)
+    setCellHighColor(Trns.kbr)
+    setCellLowColor(Trns.kbr)
   }
   Logger.log('processLowHigh finished')
 }

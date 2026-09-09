@@ -2,16 +2,19 @@
 const Trns = {
   _sht: null,
   _cch: {},
-
+  _kbr : null,
   // 1. WorkBook
   get sht() {
     if (!this._sht) {
       this._sht = SpreadsheetApp.getActiveSpreadsheet();
+      this._kbr = Trns.sht.getRange('Kebir!G1').getValue()
       console.log("Connected to Work Book: " + this._sht.getName());
     }
     return this._sht;
   },
-
+  get kbr() {
+    return this._kbr;
+  },
   // 2. Sekmeler Dizisi (.map, .filter vb. için)
   get shts() {
     return this.sht.getSheets();

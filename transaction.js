@@ -91,11 +91,10 @@ function transaction() {
 // tr = Transaction Row
 /*****************************************************************************/
 function generateProfitRatio(n,tr) {
-  var c = Trns.trs.getRange('Kebir!G1').getValue()
   let rw = 17 + n
-  var lRng = GetUnvRange(Trns, rw, c) // Last Row and column 18  
+  var lRng = GetUnvRange(Trns, rw, Trns.kbr) // Last Row and column 18  
   if (Trns.trs.getRange(lRng).isBlank() == false)
-    shiftRightProfitRatio(rw, c)
+    shiftRightProfitRatio(rw, Trns.kbr)
   Trns.trs.getRange(lRng).setValue(Trns.Price).setFontColor(Trns.Clr)
   formatRange('B3', lRng)
   var nRng = lRng + ":BZ" + (n > 1 ? rw - 1 : rw)
@@ -104,7 +103,7 @@ function generateProfitRatio(n,tr) {
   if (!Trns.trs.getRange(rRng).isBlank()) {
     var sFrm = '=(' + lRng + ' - $' + rRng + ') / $' + rRng
     // Update  Range
-    var uRng = GetUnvRange(Trns, 22, Trns.trs.getRange('Kebir!G1').getValue())//19
+    var uRng = GetUnvRange(Trns, 22, Trns.kbr)//19
     var clr = Trns.trs.getRange(uRng).getValue() > 0
       ? Trns.fclrs.Profit : Trns.fclrs.Loss
     if (Trns.typ == 'B')
@@ -115,9 +114,9 @@ function generateProfitRatio(n,tr) {
       Trns.trs.getRange(uRng).setFontColor(clr)
     }
   }
-  var cRng = GetUnvRange(Trns, 15, Trns.trs.getRange('Kebir!G1').getValue())
+  var cRng = GetUnvRange(Trns, 15, Trns.kbr)
   sFrm = '=(' + cRng + ' - $' + lRng + ') / $' + lRng
-  uRng = GetUnvRange(Trns, rw - 1, Trns.trs.getRange('Kebir!G1').getValue())//17
+  uRng = GetUnvRange(Trns, rw - 1, Trns.kbr)//17
   Trns.trs.getRange(uRng).setFormula(sFrm).setFontColor(Trns.Clr).setNumberFormat('#,##0.0000')
 }
 /*****************************************************************************/
@@ -783,10 +782,8 @@ function getDateRow() {
 /*******************************************************************************/
 function insertCrntDayValues(rw) {
   //Logger.log('insertCrnt %s r %s',rw, Trns.trs.getRange(rw,1).getA1Notation())
-  var c = Trns.trs.getRange('Kebir!G1').getValue()
   //Logger.log(' date %s', Trns.trs.getRange(13,c).getValue())
-  Trns.trs.getRange(rw,1)
-    .setValue(Trns.trs.getRange(13,c).getValue())
+  Trns.trs.getRange(rw,1).setValue(Trns.trs.getRange(13,Trns.kbr).getValue())
   //Logger.log('Date %s',Trns.trs.getRange(rw,1).getValue())
   Trns.trs.getRange(rw,2).setFormula('=F3')
   Trns.trs.getRange(rw,3).setFormula('=F5')

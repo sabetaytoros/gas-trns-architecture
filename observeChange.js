@@ -260,12 +260,11 @@ function restoreGunSonu() {
     n++
     Trns.trs = Trns.sht.getSheets()[n]
     Trns.Name = Trns.trs.getName()
-    var c = Trns.trs.getRange('Kebir!G1').getValue()
     var r = Trns.trs.getRange('Kebir!I1').getValue()
     Trns.trs.getRange(r, c).setFormula('=B3')
-    copyCell('B3', Trns.trs.getRange(r, c + 1).getA1Notation())
-    let cr = Trns.trs.getRange(r, c).getA1Notation()
-    let nr = Trns.trs.getRange(r, c + 1).getA1Notation()
+    copyCell('B3', Trns.trs.getRange(r, Trns.kbr + 1).getA1Notation())
+    let cr = Trns.trs.getRange(r, Trns.kbr).getA1Notation()
+    let nr = Trns.trs.getRange(r, Trns.kbr + 1).getA1Notation()
     let sFrm = '=(' + cr + '-' + nr + ')/' + nr
 
     Trns.trs.getRange(r - 1, c).setFormula(sFrm)
@@ -694,7 +693,7 @@ function pollValues() {
   function dayStart() {
     Logger.log(' day Start Name %s', Trns.Name)
     setOrderRow()
-    let c = Trns.sht.getRange('Kebir!G1').getValue() + 1
+    let c = Trns.kbr + 1
     let opn = Trns.trs.getRange('F3').getValue()
     let pop = Trns.trs.getRange(3, c).getValue()
     let dlo = (opn - pop) / pop

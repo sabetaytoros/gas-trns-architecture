@@ -13,7 +13,6 @@ function Test() {
   //includeIBKRPageCont()
   //setPropertyActiveSheet(cas)
   Logger.log('crc %s', crc)
-
 }
 /***************************************************************/
 function checkStartaNewDay() {  // UpdateKebirPage set Eder
