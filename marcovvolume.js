@@ -1,144 +1,136 @@
 /**
  * ============================================================================
- * MARKOV CHAIN & MACD FINANCIAL FORECASTING ENGINE
- * Sürüm: v2.2.0
- * Tarih: 07.09.26
- * Açıklama: Fonksiyon çağrısı parantezleri kaldırıldı. Doğrudan Trns.trs nesnesi kullanıldı.
+ * MARKOV BACKTEST ENGINE - KESİNLEŞMİŞ BARDAN BAŞLAMA (T-1)
+ * ============================================================================
+ * Açıklama:
+ *  - Bugünü (Satır 127) eksik/tamamlanmamış kabul edip atlar.
+ *  - Analizi ve projeksiyonu strictly tamamlanmış son gün olan 128. satırdan (nextcell + 2) başlatır.
  * ============================================================================
  */
+function runMarkovEngineFromCompletedBar() {
+  var nextEmptyRow = nextcell(); // Örn: 126. satır
 
-/**
- * @function runFullMarkovEngineAscending10Days
- * @description Ana yürütücü fonksiyon. Önce eski çıktıları temizler, geçmiş verileri okur,
- *              en iyi modeli seçer, durumları hesaplar ve çıktı alanını günceller.
- */
-function runFullMarkovEngineAscending10Days() {
-  var startRowT0 = nextcell();
+  if (!nextEmptyRow) return;
 
-  if (!startRowT0 || startRowT0 < 2) return;
+  // BUGÜNÜN (EKSİK BARIN) ATLANMASI:
+  // nextEmptyRow = 126 ise -> 127 (Bugün/Eksik) -> 128 (Tamamlanmış Son Gün / T0)
+  var startRowT0 = nextEmptyRow + 2; // Satır 128
 
-  // --------------------------------------------------------------------------
-  // 1. ÖNCEKİ ÇIKTILARI TEMİZLEME (G:Q Sütunları, Header dahil t+10 -> t0)
-  // --------------------------------------------------------------------------
-  var headerRow = startRowT0 - 11;
-  var startCleanRow = Math.max(1, headerRow);
-  var numRowsToClean = startRowT0 - startCleanRow + 1;
+  var maxForecastSteps = 4; // Forward için 4 adım
+  var maxBackSteps = 4;     // Backtest için 4 adım (Üst sınır = 4)
 
-  if (numRowsToClean > 0) {
-    // 7. Sütun (G) 'den itibaren 11 sütunluk (G:Q) çıktı alanını temizler
-    Trns.trs.getRange(startCleanRow, 7, numRowsToClean, 11).clearContent();
+  // 1. TEMİZLİK
+  var startCleanRow = Math.max(1, startRowT0 - maxForecastSteps);
+  Trns.trs.getRange(startCleanRow, 7, (startRowT0 + maxBackSteps) - startCleanRow + 1, 11).clearContent();
+
+  // 2. VERİ OKUMA
+  var rawValues = Trns.trs.getRange(1, 1, startRowT0 + 10, 6).getValues();
+
+  var chronologicalData = [];
+  var sheetRowToChronIdx = {};
+
+  for (var i = 0; i < rawValues.length; i++) {
+    var r = rawValues[i];
+    if (r[0] && r[4] !== "" && !isNaN(Number(r[4]))) {
+      chronologicalData.push({
+        sheetRow: i + 1,
+        date: r[0],
+        open: Number(r[1]),
+        high: Number(r[2]),
+        low: Number(r[3]),
+        close: Number(r[4]),
+        volume: Number(r[5])
+      });
+    }
   }
 
-  // --------------------------------------------------------------------------
-  // 2. VERİ OKUMA VE HAZIRLIK
-  // --------------------------------------------------------------------------
-  var TOTAL_BARS = 145;
-  var startReadRow = Math.max(1, startRowT0 - TOTAL_BARS + 1);
-  var numRowsToRead = startRowT0 - startReadRow + 1;
-
-  // A:F Sütunlarından OHLCV Verilerini Oku
-  var rawValues = Trns.trs.getRange(startReadRow, 1, numRowsToRead, 6).getValues();
-
-  var fullData = rawValues.map(function(row, index) {
-    return {
-      rowIndex: startReadRow + index,
-      date: row[0],
-      open: Number(row[1]),
-      high: Number(row[2]),
-      low: Number(row[3]),
-      close: Number(row[4]),
-      volume: Number(row[5])
-    };
-  });
-
-  // Tarih sıralamasını kronolojik yap (Eski -> Yeni)
-  if (new Date(fullData[0].date) > new Date(fullData[fullData.length - 1].date)) {
-    fullData.reverse();
+  // Kronolojik Hizalama (Eski -> Yeni)
+  if (chronologicalData.length > 1 && new Date(chronologicalData[0].date) > new Date(chronologicalData[chronologicalData.length - 1].date)) {
+    chronologicalData.reverse();
   }
 
-  // MACD ve 4-Durum Hesaplamaları
-  var macdResults = calculateMACD(fullData, 12, 26, 9);
-  var allStates = fullData.map(function(bar, idx) {
+  for (var c = 0; c < chronologicalData.length; c++) {
+    sheetRowToChronIdx[chronologicalData[c].sheetRow] = c;
+  }
+
+  // MACD ve Durum Analizi
+  var macdResults = calculateMACD(chronologicalData, 12, 26, 9);
+  var allStates = chronologicalData.map(function(bar, idx) {
     return calculate4StatesFromOHLCV(bar, macdResults[idx]);
   });
 
-  var idxT0 = fullData.length - 1;
-  var idxT10 = fullData.length - 11;
+  // --------------------------------------------------------------------------
+  // 3. TAMAMLATILMIŞ BARLARDAN BACKTEST (128, 129, 130, 131)
+  // --------------------------------------------------------------------------
+  for (var offset = 0; offset < maxBackSteps; offset++) {
+    var currentRow = startRowT0 + offset; // 128. satırdan başlar
+    var chronIdx = sheetRowToChronIdx[currentRow];
 
-  // 32 Bar (Kısa) vs 100 Bar (Uzun) Model Seçimi ve Backtest
-  var backtest32 = runMarkovBacktest(allStates, idxT10, 32, 10);
-  var backtest100 = runMarkovBacktest(allStates, idxT10, 100, 10);
-  var actualLast10 = allStates.slice(idxT10 + 1, idxT0 + 1);
+    if (chronIdx === undefined || chronIdx < 1) continue;
 
-  var score32 = calculateAccuracy(backtest32.predictions, actualLast10);
-  var score100 = calculateAccuracy(backtest100.predictions, actualLast10);
+    var actualBar = chronologicalData[chronIdx];
+    var prevBar = chronologicalData[chronIdx - 1]; // Tahmin için bir önceki gün (t-1)
 
-  var winningModel = (score32 >= score100) ? "32 Bar (Kısa)" : "100 Bar (Uzun)";
-  var winningWindowSize = (score32 >= score100) ? 32 : 100;
-  var winningScore = Math.max(score32, score100);
+    var fDate = formatDateCustom(actualBar.date);
+    var initStateVec = getInitialStateVector(allStates[chronIdx - 1]);
 
-  // Geçiş Matrisi ve Başlangıç Vektörü
-  var transitionMatrix = build4x4TransitionMatrix(allStates, idxT0, winningWindowSize);
-  var initialVector = getInitialStateVector(allStates[idxT0]);
+    var mat = build4x4TransitionMatrix(allStates, chronIdx - 1, 4);
+    var vec = multiplyVectorMatrix(initStateVec, mat);
+    var bullWeight = vec[1] + vec[3]; 
+    var changePct = (bullWeight - 0.5) * 0.04;
 
-  // Dynamic Header Düzenlemesi (t+10 üzerindeki satır)
-  if (headerRow >= 1) {
-    setupInPlaceHeaders(headerRow);
+    // FİYAT PROJEKSİYONLARI
+    var modelClose = Number((prevBar.close * (1 + changePct)).toFixed(2));
+    var modelOpen = Number(prevBar.close.toFixed(2));
+    var modelHigh = Number((Math.max(modelOpen, modelClose) * 1.003).toFixed(2));
+    var modelLow = Number((Math.min(modelOpen, modelClose) * 0.997).toFixed(2));
+
+    var deviationVal = Number((((actualBar.close - modelClose) / actualBar.close) * 100).toFixed(2));
+
+    // 22G Back (G:K)
+    Trns.trs.getRange(currentRow, 7).setValue(fDate);
+    Trns.trs.getRange(currentRow, 8, 1, 4).setValues([[modelOpen, modelHigh, modelLow, modelClose]]);
+    Trns.trs.getRange(currentRow, 12).setValue(deviationVal);
+
+    // 100G Back (M:Q)
+    Trns.trs.getRange(currentRow, 13).setValue(fDate);
+    Trns.trs.getRange(currentRow, 14, 1, 4).setValues([[modelOpen, modelHigh, modelLow, modelClose]]);
   }
 
   // --------------------------------------------------------------------------
-  // 3. ÇIKTI YAZDIRMA DÖNGÜSÜ (t0 -> t+10)
+  // 4. FORWARD PROJEKSİYON (128. Satırdan İleriye Doğru Tahmin)
   // --------------------------------------------------------------------------
-  for (var step = 0; step <= 10; step++) {
-    var targetRow = startRowT0 - step;
-    if (targetRow <= 1) break;
+  var idxT0 = sheetRowToChronIdx[startRowT0]; // Satır 128 (Tamamlanmış son bar)
+  if (idxT0 !== undefined) {
+    var baseBar = chronologicalData[idxT0];
+    var initialVectorT0 = getInitialStateVector(allStates[idxT0]);
+    var transMatrixT0 = build4x4TransitionMatrix(allStates, idxT0, 4);
 
-    var stepVector = multiplyVectorMatrix(initialVector, matrixPower(transitionMatrix, step));
-    var predictedState = getArgMax(stepVector);
+    for (var step = 1; step <= maxForecastSteps; step++) {
+      var targetRow = startRowT0 - step; // 127, 126, 125... satırlarına yazar
+      var forecastDate = getBusinessDayOffsetForward(baseBar.date, step);
 
-    var stepLabel = (step === 0) ? "t_0 (Bugün)" : "t+" + step;
-    var forecastDate = getBusinessDayOffset(fullData[idxT0].date, step);
-    var macdSignalText = macdResults[idxT0] ? macdResults[idxT0].signalText : "N/A";
-    var actionText = get4StateActionAdvice(predictedState, stepVector);
+      var v = multiplyVectorMatrix(initialVectorT0, matrixPower(transMatrixT0, step));
+      var bw = v[1] + v[3];
+      var fFactor = 1 + ((bw - 0.5) * 0.03 * step);
 
-    var baseStateCalc = "State " + allStates[idxT0];
+      var fClose = Number((baseBar.close * fFactor).toFixed(2));
+      var fOpen = Number(baseBar.close.toFixed(2));
+      var fHigh = Number((Math.max(fOpen, fClose) * (1 + 0.003 * step)).toFixed(2));
+      var fLow = Number((Math.min(fOpen, fClose) * (1 - 0.003 * step)).toFixed(2));
 
-    var outputValues = [[
-      stepLabel,
-      forecastDate,
-      baseStateCalc,
-      winningModel + " (%" + (winningScore * 100).toFixed(0) + ")",
-      macdSignalText,
-      (stepVector[0] * 100).toFixed(1) + "%",
-      (stepVector[1] * 100).toFixed(1) + "%",
-      (stepVector[2] * 100).toFixed(1) + "%",
-      (stepVector[3] * 100).toFixed(1) + "%",
-      "State " + predictedState,
-      actionText
-    ]];
+      // Forward Yazdırma
+      Trns.trs.getRange(targetRow, 7).setValue(forecastDate);
+      Trns.trs.getRange(targetRow, 8, 1, 4).setValues([[fOpen, fHigh, fLow, fClose]]);
 
-    Trns.trs.getRange(targetRow, 7, 1, 11).setValues(outputValues);
+      Trns.trs.getRange(targetRow, 13).setValue(forecastDate);
+      Trns.trs.getRange(targetRow, 14, 1, 4).setValues([[fOpen, fHigh, fLow, fClose]]);
+    }
   }
 }
 
 /**
- * @function setupInPlaceHeaders
- * @description Çıktı sütunları için başlık formatlaması.
- */
-function setupInPlaceHeaders(headerRow) {
-  var headers = [
-    ["Etiket", "Tarih", "Hesaplanan Durum", "Model (İsabet)", "MACD Sinyal", "Prob S0", "Prob S1", "Prob S2", "Prob S3", "Tahmin Durum", "Aksiyon Tavsiyesi"]
-  ];
-  var range = Trns.trs.getRange(headerRow, 7, 1, 11);
-  range.setValues(headers);
-  range.setFontWeight("bold");
-  range.setBackground("#202124");
-  range.setFontColor("#ffffff");
-}
-
-/**
- * @function calculateMACD
- * @description EMA (12, 26) ve Signal (9) değerlerini hesaplar.
+ * MACD Hesaplama Fonksiyonu
  */
 function calculateMACD(dataArray, shortPeriod, longPeriod, signalPeriod) {
   var closes = dataArray.map(function(d) { return d.close; });
@@ -154,15 +146,12 @@ function calculateMACD(dataArray, shortPeriod, longPeriod, signalPeriod) {
   
   return macdLine.map(function(mVal, idx) {
     var sVal = signalLine[idx];
-    var hist = mVal - sVal;
-    var signalText = (mVal > sVal) ? "BULLISH" : "BEARISH";
-    return { macd: mVal, signal: sVal, histogram: hist, signalText: signalText };
+    return { macd: mVal, signal: sVal, histogram: mVal - sVal };
   });
 }
 
 /**
- * @function calculateEMA
- * @description Üstel Hareketli Ortalama (EMA) hesaplar.
+ * EMA (Üstel Hareketli Ortalama) Hesaplama
  */
 function calculateEMA(values, period) {
   var k = 2 / (period + 1);
@@ -185,22 +174,20 @@ function calculateEMA(values, period) {
 }
 
 /**
- * @function calculate4StatesFromOHLCV
- * @description Fiyat değişimi ve MACD bileşiminden 4 durumlu sınıflandırma yapar.
+ * OHLCV ve MACD Sinyalinden 4'lü Durum (State) Belirleme
  */
 function calculate4StatesFromOHLCV(bar, macdObj) {
   var isUp = bar.close >= bar.open;
   var isBullishMACD = macdObj ? (macdObj.macd >= macdObj.signal) : true;
 
-  if (!isUp && !isBullishMACD) return 0;
-  if (!isUp && isBullishMACD)  return 1;
-  if (isUp && !isBullishMACD)  return 2;
-  return 3;
+  if (!isUp && !isBullishMACD) return 0; // Ayı Mum + Ayı MACD
+  if (!isUp && isBullishMACD)  return 1; // Ayı Mum + Boğa MACD
+  if (isUp && !isBullishMACD)  return 2; // Boğa Mum + Ayı MACD
+  return 3;                             // Boğa Mum + Boğa MACD
 }
 
 /**
- * @function build4x4TransitionMatrix
- * @description Belirtilen pencere genişliğinde 4x4 Markov Geçiş Olasılık Matrisini oluşturur.
+ * Geçiş Matrisi Oluşturucu
  */
 function build4x4TransitionMatrix(states, endIdx, windowSize) {
   var matrix = [
@@ -235,38 +222,7 @@ function build4x4TransitionMatrix(states, endIdx, windowSize) {
 }
 
 /**
- * @function runMarkovBacktest
- * @description Test periyodunda Markov tahmin başarısını ölçer.
- */
-function runMarkovBacktest(states, testStartIdx, windowSize, steps) {
-  var transMatrix = build4x4TransitionMatrix(states, testStartIdx, windowSize);
-  var initVec = getInitialStateVector(states[testStartIdx]);
-  var predictions = [];
-
-  for (var h = 1; h <= steps; h++) {
-    var hVec = multiplyVectorMatrix(initVec, matrixPower(transMatrix, h));
-    predictions.push(getArgMax(hVec));
-  }
-  return { predictions: predictions };
-}
-
-/**
- * @function calculateAccuracy
- * @description Tahmin edilen durumlar ile gerçekleşen durumları karşılaştırarak isabet oranını döner.
- */
-function calculateAccuracy(predictions, actuals) {
-  if (!predictions || !actuals || predictions.length === 0) return 0;
-  var matches = 0;
-  var count = Math.min(predictions.length, actuals.length);
-  for (var i = 0; i < count; i++) {
-    if (predictions[i] === actuals[i]) matches++;
-  }
-  return matches / count;
-}
-
-/**
- * @function getInitialStateVector
- * @description Geçerli durumu birim vektöre (one-hot) çevirir.
+ * Başlangıç Durum Vektörü
  */
 function getInitialStateVector(state) {
   var vec = [0, 0, 0, 0];
@@ -279,8 +235,7 @@ function getInitialStateVector(state) {
 }
 
 /**
- * @function multiplyVectorMatrix
- * @description Vektör ile matris çarpımı.
+ * Vektör-Matris Çarpımı
  */
 function multiplyVectorMatrix(vec, mat) {
   var result = [0, 0, 0, 0];
@@ -293,8 +248,7 @@ function multiplyVectorMatrix(vec, mat) {
 }
 
 /**
- * @function matrixPower
- * @description Matrisin n. kuvvetini alır.
+ * Matris Kuvveti Alma
  */
 function matrixPower(mat, power) {
   if (power === 0) {
@@ -313,8 +267,7 @@ function matrixPower(mat, power) {
 }
 
 /**
- * @function multiplyMatrices
- * @description İki 4x4 matrisi çarpar.
+ * Matris-Matris Çarpımı
  */
 function multiplyMatrices(a, b) {
   var res = [
@@ -334,44 +287,13 @@ function multiplyMatrices(a, b) {
 }
 
 /**
- * @function getArgMax
- * @description Dizideki en yüksek değerin indeksini döner.
+ * Tarih Formatlayıcı (GG.AA.YY)
  */
-function getArgMax(arr) {
-  var maxVal = -1;
-  var maxIdx = 0;
-  for (var i = 0; i < arr.length; i++) {
-    if (arr[i] > maxVal) {
-      maxVal = arr[i];
-      maxIdx = i;
-    }
-  }
-  return maxIdx;
-}
+function formatDateCustom(dateVal) {
+  if (!dateVal) return "";
+  var d = (dateVal instanceof Date) ? dateVal : new Date(dateVal);
+  if (isNaN(d.getTime())) return "";
 
-/**
- * @function getBusinessDayOffset
- * @description Hafta sonlarını atlayarak iş günü tarihini DD.MM.YY formatında hesaplar.
- */
-function getBusinessDayOffset(baseDate, offsetDays) {
-  var d = new Date(baseDate);
-  var added = 0;
-  while (added < offsetDays) {
-    d.setDate(d.getDate() + 1);
-    var dayOfWeek = d.getDay();
-    if (dayOfWeek !== 0 && dayOfWeek !== 6) { // 0 = Pazar, 6 = Cumartesi
-      added++;
-    }
-  }
-  return formatDateCustom(d);
-}
-
-/**
- * @function formatDateCustom
- * @description Tarihi DD.MM.YY formatında stringe çevirir.
- */
-function formatDateCustom(dateObj) {
-  var d = new Date(dateObj);
   var day = ("0" + d.getDate()).slice(-2);
   var month = ("0" + (d.getMonth() + 1)).slice(-2);
   var year = d.getFullYear().toString().slice(-2);
@@ -379,13 +301,19 @@ function formatDateCustom(dateObj) {
 }
 
 /**
- * @function get4StateActionAdvice
- * @description Olasılık vektörüne göre stratejik işlem tavsiyesi üretir.
+ * İş Günü İleri Tarih Atlama
  */
-function get4StateActionAdvice(state, probVec) {
-  var bullProb = probVec[1] + probVec[3];
-  if (state === 3 && bullProb > 0.60) return "GÜÇLÜ AL / POZİSYON KORU";
-  if (state === 3 || state === 2) return "KADEMELİ ALIM / TUT";
-  if (state === 1) return "İZLE / BOĞA DÖNÜŞ SİNYALİ";
-  return "SAT / NAKİTTE KAL";
+function getBusinessDayOffsetForward(baseDate, offsetDays) {
+  var d = (baseDate instanceof Date) ? new Date(baseDate.getTime()) : new Date(baseDate);
+  if (isNaN(d.getTime())) return "";
+
+  var added = 0;
+  while (added < offsetDays) {
+    d.setDate(d.getDate() + 1);
+    var dayOfWeek = d.getDay();
+    if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+      added++;
+    }
+  }
+  return formatDateCustom(d);
 }

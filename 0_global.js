@@ -102,7 +102,7 @@ const GLOBAL_WEEKEND = isWeekend();
 
 /*****************************************************************************/
 const flgBt = { FGUNSONU: 0, FHAFTASONU: 1}
-const BatchType = flgBt.FGUNSONU
+BatchType = flgBt.FGUNSONU
 function triggerFunction() {
   // Skip execution on weekends
   if (GLOBAL_WEEKEND) return 

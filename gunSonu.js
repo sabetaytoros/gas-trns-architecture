@@ -7,7 +7,9 @@ const GSMAX_RUNNING_TIME = 5.5 * 60 * 1000
 const EPS_TIME = 60000
 function testHoliday(){
   Trns.trs()
-   processHoliDay() 
+  Trns.Holiday = isHoliday()
+  Logger.log('Trns.Holiday '+ Trns.Holiday)
+  // processHoliDay() 
 
 }
 
@@ -205,8 +207,7 @@ function gunSonuIslemleri() {
       var d = datum.getDay()
       Logger.log(' d %s ', d)  // && d != 7
       if (d != 7 ) { 
-        isHoliday()
-        Logger.log('isHoliday %s', Trns.Holiday)
+        Trns.Holiday = isHoliday()
         if (Trns.Holiday) {
           info.flg = flgEnum.FHLDY
           Logger.log(' Eger pH bitmez is HTML in pHolidayi calistirmasi gerek')
@@ -307,18 +308,14 @@ const DAYTIME = 24 * 3600 * 1000
 
 /****************************************************************************/
 function isHoliday() {
-  Trns.Holiday = false
-  if (BatchType == flgBt.FHAFTASONU) return
+  if (BatchType == flgBt.FHAFTASONU) return false
+  var c = Trns.trs.getRange('Kebir!G1').getValue()  
   for (s = 4; s < 7; s++) {
     Trns.trs = Trns.sht.getSheets()[s];
-    var c = Trns.trs.getRange('Kebir!G1').getValue()
     v = abs(Trns.trs.getRange(14, c).getValue())
-    if (v > 0.000) {
-      Trns.Holiday = false
-      return
-    }
-    Trns.Holiday = true
-  }
+    if (v > 0.000) return false
+  }    
+  return true
 }
 /****************************************************************************/
 function getStartingPoint() {
@@ -464,7 +461,7 @@ function setChart() {
       , Trns.trs.getRange(sr1, 1).getA1Notation())
     src = Trns.trs.getRange(13, Trns.trs.getRange('Kebir!G1').getValue() - 1).getA1Notation()
     dst = Trns.trs.getRange(sr, 1).getA1Notation()
-   Logger.log("src %s dst %s",src,dst)
+   // Logger.log("src %s dst %s",src,dst)
     copyCell(src, dst)
 /*     s ='A' + sr
     s = '= TEXT(' + s +',"dd,mm,yy")'
