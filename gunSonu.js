@@ -6,6 +6,10 @@ const flgName = ["FSTRT", "FCONT", "FTIMEOUT", "FEND","FHLDY","FGNSON", "FERGNSO
 const GSMAX_RUNNING_TIME = 5.5 * 60 * 1000
 const EPS_TIME = 60000
 
+function testyahoo() {
+  Trns.trs()
+  getYahooVolume(Trns.trs.getRange(B1).getValue(),Trns.trs.getRange('A104').getValue())
+}
 function testHoliday(){
   Trns.trs()
   Trns.Holiday = isHoliday()
@@ -14,7 +18,11 @@ function testHoliday(){
   // processHoliDay() 
 
 }
-
+function getYahooVolume(ticker, startDateStr) {
+  var url = "https://query1.finance.yahoo.com/v7/finance/download/" + ticker + "?period1=" + startDateStr;
+  Logger.log('url %s', url)
+  // Alternative: Fetch volume via custom API to bypass GOOGLEFINANCE pipeline gaps
+}
 /**
  * Trns.trs mimarisini önce Aktif Sayfa, sonra 'Kebir' sayfası için test eder.
  */
@@ -124,13 +132,11 @@ function tesChart() {
 /*****************************M***********************************************/
 
 function testperiod() {
-  Trns.sht = SpreadsheetApp.getActiveSpreadsheet()
-  Logger.log('Id = %s', Trns.sht.getName())
+  //Trns.sht = SpreadsheetApp.getActiveSpreadsheet()
+  //Logger.log('Id = %s', Trns.sht.getName())
   //Trns.bindTab(Trns.sht.getActiveSheet()) 
-  Trns.trs = Trns.sht.getActiveSheet()
+  Trns.trs()
   Trns.sName = Trns.trs.getName()  
-
-
   Trns.ord = Trns.sht.getSheets()[Orders]; // Order Sheet 
   Logger.log('shtName %s ordNAME %s', Trns.sName, Trns.ord.getName())
   CommonProcess()
@@ -168,8 +174,8 @@ function CommonProcess() {
   setCycle()
   setChart()
   testupdateLastTransaction()
-  defineQuarters()
-  //processOHLCWithDynamicMarkov()
+  //defineQuarters()
+  runMarkovEngine()
   Logger.log('CommonProcess bitti')
 }
 /****************************************************************************/
@@ -336,10 +342,8 @@ function newtestElapsedTime(eTime, scriptCache) {
 function canbeProcessed() {
   if (Trns.trs.getRange('E1').isBlank()) {
     Trns.Name = Trns.trs.getSheetName()
-    Logger.log('Process edilecek')
     return true
   }
-  Logger.log('Process edildi')
   return false
 }
 const abs = x => Number(x.toString().replace('-', ''))
@@ -446,7 +450,7 @@ function setChart() {
   //Logger.log('sd %s cd %s ', sd, cd)
   if (!isequalDate(sd, cd)) {
     let sr1 = sr + 1
-    let s = 'A' + sr1 + ':F' + sr1
+    let s = 'A' + sr1 + ':K' + sr1
     //Logger.log('setChart()\n rng %s s %s  ', Trns.trs.getRange(s).getA1Notation(), s)
     const rng = Trns.trs.getRange(s);
     const expandedRange = rng.getMergedRanges();
@@ -456,7 +460,7 @@ function setChart() {
       rng.breakApart();
     }
     Trns.trs.getRange(s).insertCells(SpreadsheetApp.Dimension.ROWS);
-    copyFormatRange(Trns.trs.getRange(sr, 1, 1, 6).getA1Notation()
+    copyFormatRange(Trns.trs.getRange(sr, 1, 1, 11).getA1Notation()
       , Trns.trs.getRange(sr1, 1).getA1Notation())
     src = Trns.trs.getRange(13, Trns.kbr - 1).getA1Notation()
     dst = Trns.trs.getRange(sr, 1).getA1Notation()
@@ -1008,9 +1012,10 @@ function updateSonucSatiri() {
 }
 /*****************************************************************************/
 function updateKebirPage() {
-  Trns.trs(Trns.sht.getSheets()[Kebir]) ;
+  Trns.trs()
   var cv = BatchType == flgBt.FGUNSONU ? Trns.kbr - 1 : 12
-  Trns.trs.getRange(Trns.kbr).setValue(cv);
+  Trns.sht.getRange('Kebir!G1').setValue(cv);
+  Logger.log('yeni cv ' + Trns.sht.getRange('Kebir!G1').setValue(cv))
   setProp("GUNSONU_PRC",flgEnum.FEND,false)
   setProp('POLL_VALUES', flgEnum.FPLVSTRT,false)  
   setProp('IDLE.STATE', flgEnum.FIDLE,false)
@@ -1018,7 +1023,8 @@ function updateKebirPage() {
   setProp('DAY_START',flgEnum.FSTRT,false)
   setProp('CLOSE_WIN', flgEnum.FSTRT,false)
   setProp('UPDATE_KEBIR_PAGE',flgEnum.FEND, true)
-  Logger.log('updateKebirPage procSecGunSonu bitti  %s', updateKebirPage.caller.name);
+  Logger.log('updateKebirPage procSecGunSonu bitti value &s callername  %s', 
+    Trns.sht.getRange('Kebir!G1').getValue(), updateKebirPage.caller.name);
 }
 /*****************************************************************************/
 function checkColor(r, c, v, t) { // row, col,val, {Min or maX}
@@ -1061,7 +1067,7 @@ function processLowHigh() {
     Trns.trs.getRange('D4').setFormula(sFrm) // Previos Day open dif
     dst = Trns.trs.getRange(rlw, m, 1, 10).getA1Notation()
     sFrm = '=min(' + dst + ')'
-    checkColor(rlw,c, Trns.trs.getRange('F7').getDisplayValue(), "M")
+    checkColor(rlw,Trns.kbr, Trns.trs.getRange('F7').getDisplayValue(), "M")
     Trns.trs.getRange('F7').setFormula(sFrm) // Son on gunun Lowu
     sFrm = '=Average(' + dst + ')'
     Trns.trs.getRange('F16').setFormula(sFrm)  // Lowlarin ortalamasi  
