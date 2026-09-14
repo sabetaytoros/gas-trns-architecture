@@ -1,11 +1,13 @@
 /**
- * MARKOV ENGINE - SÜRÜM v5.9.8.2
- * - Dinamik Sürüm Yazımı (nextcell() - 11)
- * - Otomatik Forward (G-L) ve Backtest (N-S) Başlıkları
+ * MARKOV ENGINE - SÜRÜM v5.9.8.4
+ * - Forward (G-L) Başlık: emptyRow - 11 (Satır 116)
+ * - Backtest (N-S) Başlık: emptyRow - 1 (Satır 126)
+ * - Backtest Başlangıcı: emptyRow (Satır 127 - Gerçek ve Tahmin Ortak Satırı)
+ * - L Hücresi (emptyRow / Satır 127): Dinamik Deviation Formülü
  */
 
 function drvEngine() {
-  var ts = 22; // Tam 22 Adet Backtest Adımı
+  var ts = 22; // 22 Adet Backtest Adımı
   return runMarkovEngine(ts);
 }
 
@@ -24,35 +26,33 @@ function parseDateCustom(dateStr) {
 }
 
 function runMarkovEngine(backwardSteps = 22) {
-  var VERSION = "MARKOV ENGINE - SÜRÜM v5.9.8.2";
+  var VERSION = "MARKOV ENGINE - SÜRÜM v5.9.8.4";
 
-  var G_START_COL = 7;  // G Sütunu (Forward 11 Adım Tahmin)
+  var G_START_COL = 7;  // G Sütunu (Forward 10 Adım Tahmin)
   var N_START_COL = 14; // N Sütunu (Backtest 22 Adım Tahmin)
   
-  var emptyRow = nextcell(); // Örn: Satır 127
+  var emptyRow = nextcell(); // Örn: Satır 127 (Bugünün Gerçek Satırı)
   if (!emptyRow) return null;
 
-  // 0. DİNAMİK SÜRÜM BİLGİSİ YAZIMI (nextcell() - 11)
-  var versionRow = emptyRow - 10; // Örn: 127 - 11 = Satır 116
+  // 0. DİNAMİK SÜRÜM BİLGİSİ VE FORWARD BAŞLIĞI (emptyRow - 11) -> Satır 116
+  var versionRow = emptyRow - 11;
   Trns.trs.getRange(versionRow, 1).setValue(VERSION);
 
-  // 1. TEMİZLEME İŞLEMLERİ (Eski Verileri Temizler)
-  Trns.trs.getRange(emptyRow - 9, G_START_COL, 10, 6).clearContent(); // Forward Tahminler (G-L)
-  Trns.trs.getRange(emptyRow + 1, N_START_COL, backwardSteps, 6).clearContent(); // Backtest (N-S)
-
-  // 2. DİNAMİK BAŞLIKLAR
   var headers = [['Date', 'Open', 'High', 'Low', 'Close', 'Dev']];
   
   // Forward Başlıkları (G - L Sütunları, emptyRow - 11) -> Örn: Satır 116
   Trns.trs.getRange(versionRow, G_START_COL, 1, 6).setValues(headers);
 
-  // Backtest Başlıkları (N - S Sütunları, emptyRow) -> Örn: Satır 127
-  Trns.trs.getRange(emptyRow, N_START_COL, 1, 6).setValues(headers);
+  // Backtest Başlıkları (N - S Sütunları, emptyRow - 1) -> Örn: Satır 126
+  Trns.trs.getRange(emptyRow - 1, N_START_COL, 1, 6).setValues(headers);
 
+  // 1. TEMİZLEME İŞLEMLERİ
+  Trns.trs.getRange(emptyRow - 10, G_START_COL, 11, 6).clearContent(); // Forward (G-L)
+  Trns.trs.getRange(emptyRow, N_START_COL, backwardSteps, 6).clearContent(); // Backtest (N-S)
 
-  // 3. HAM VERİ OKUMA (22 ADIM İÇİN NEXCELL()+1 -> NEXCELL()+23)
-  var startReadRow = emptyRow + 1; // Satır 128
-  var totalReadRows = backwardSteps + 1; // 23 Satır
+  // 2. HAM VERİ OKUMA (emptyRow / Satır 127'den itibaren oku)
+  var startReadRow = emptyRow; // Satır 127
+  var totalReadRows = backwardSteps + 1; // 23 Satır (127 - 149 Arası)
   
   var rawValues = Trns.trs.getRange(startReadRow, 1, totalReadRows, 6).getValues();
   
@@ -92,7 +92,7 @@ function runMarkovEngine(backwardSteps = 22) {
   var totalBars = chronologicalData.length;
   if (totalBars === 0) return null;
 
-  // 4. MACD VE DURUM HESAPLAMA
+  // 3. MACD VE DURUM HESAPLAMA
   var macdResults = (totalBars >= 17) ? calculateMACD(chronologicalData, 12, 26, 9) : null;
   var allStates = chronologicalData.map(function(bar, idx) {
     return (macdResults && macdResults[idx]) 
@@ -100,9 +100,10 @@ function runMarkovEngine(backwardSteps = 22) {
       : ((bar.close >= bar.open) ? 1 : 0);
   });
 
-  // 5. BACKTEST - 22 ADIM (N-S SÜTUNLARINA YAZILIR)
+  // 4. BACKTEST - 22 ADIM (BUGÜNDEN / SATIR 127'DEN BAŞLAR)
   for (var step = 0; step < backwardSteps; step++) {
-    var targetRow = (emptyRow + 1) + step; // 128, 129... 149
+    var targetRow = emptyRow + step; // 127, 128... 148
+    
     var baseBar = rowMap[targetRow];
     var prevBar = rowMap[targetRow + 1];
 
@@ -152,16 +153,14 @@ function runMarkovEngine(backwardSteps = 22) {
     Trns.trs.getRange(targetRow, N_START_COL + 1, 1, 5).setValues(writeValues);
   }
 
-  // 6. FORWARD PREDICTION (126 -> 117 G-L SÜTUNLARINA YAZILIR)
-  var anchorRow = emptyRow - 1; // Satır 126
+  // 5. FORWARD PREDICTION (127 -> 117 G-L SÜTUNLARINA YAZILIR)
+  var anchorRow = emptyRow; // Satır 127
   var baseBarFwd = chronologicalData[totalBars - 1]; 
   var currentBaseClose = Number(baseBarFwd.close);
   var currentState = allStates[totalBars - 1];
   var baseDate = new Date(baseBarFwd.parsedDate);
 
-  var currentTargetRow = anchorRow + 1; 
-   
-  for (var f = 1; f <= 10; f++) {
+  for (var f = 1; f <= 11; f++) {
     var initStateVecF = getInitialStateVector(currentState);
     var matF = build4x4TransitionMatrix(
       allStates, 
@@ -194,27 +193,34 @@ function runMarkovEngine(backwardSteps = 22) {
     pred.high = Number((maxBodyF * (1 + highChangePctF + 0.003)).toFixed(2));
     pred.low  = Number((minBodyF * (1 - lowChangePctF - 0.003)).toFixed(2));
 
-    baseDate.setDate(baseDate.getDate() + 1);
+
     if (baseDate.getDay() === 6) baseDate.setDate(baseDate.getDate() + 2);
     if (baseDate.getDay() === 0) baseDate.setDate(baseDate.getDate() + 1);
     pred.dateStr = formatDateCustom(baseDate);
 
-    var fwdWriteValues = [[pred.open, pred.high, pred.low, pred.close, pred.dev]];
+    var fwdWriteValues = [[pred.open, pred.high, pred.low, pred.close, ""]];
 
-    // G Sütununa Tarih, H-L Sütunlarına Forward Tahmin Yazılır
+    // G Sütununa Tarih, H-K Sütunlarına Forward Tahmin Yazılır
     Trns.trs.getRange(currentTargetRow, G_START_COL).setValue(pred.dateStr);
     Trns.trs.getRange(currentTargetRow, G_START_COL + 1, 1, 5).setValues(fwdWriteValues);
+
     currentBaseClose = pred.close;
     currentState = (pred.close >= pred.open) ? 1 : 0; 
     currentTargetRow--; 
+    baseDate.setDate(baseDate.getDate() + 1);
+
   }
+
+  // 6. SADECE 127. SATIRIN L HÜCRESİNE (L127) DİNAMİK DEVIATION FORMÜLÜ KOYMA
+  // Formül: =(E127 - K127) / E127
+  var devFormula = "=(E" + emptyRow + "-K" + emptyRow + ")/E" + emptyRow;
+  Trns.trs.getRange(emptyRow, G_START_COL + 5).setFormula(devFormula);
 
   return { emptyRow: emptyRow, totalBarsProcessed: totalBars };
 }
-
-/**
- * OHLCV ve MACD Sinyalinden 4'lü Durum (State) Belirleme
- */
+/******************************************************************************
+ * OHLCV ve MACD Sinyalinden 4'lü Durum (State) Belirleme                     * 
+ ******************************************************************************/
 function calculate4StatesFromOHLCV(bar, macdObj) {
   var isUp = bar.close >= bar.open;
   var isBullishMACD = macdObj ? (macdObj.macd >= macdObj.signal) : true;

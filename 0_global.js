@@ -1,13 +1,14 @@
-// Global scope - 0_Global.gs
+// --- Global Scope (0_Global.gs) ---
 const Trns = {
   _sht: null,
   _cch: {},
-  _kbr : null,
+  _kbr: null,
+
   // 1. WorkBook
   get sht() {
     if (!this._sht) {
       this._sht = SpreadsheetApp.getActiveSpreadsheet();
-      this._kbr = Trns.sht.getRange('Kebir!G1').getValue()
+      this._kbr = Trns.sht.getRange('Kebir!G1').getValue();
       console.log("Connected to Work Book: " + this._sht.getName());
     }
     return this._sht;
@@ -15,12 +16,51 @@ const Trns = {
   get kbr() {
     return this._kbr;
   },
-  // 2. Sekmeler Dizisi (.map, .filter vb. için)
+  // 2. Sekmeler Dizisi
   get shts() {
     return this.sht.getSheets();
   },
 
-  // --- ORİJİNAL GLOBAL DEĞİŞKENLER (Aynen korundu) ---
+  // --- SINGLETON MARKOV STATE CONTROLLER (v5.9.8 & v6.0) ---
+  markovState: (function() {
+    let instance = null;
+
+    function createInstance() {
+      return {
+        gamma: 0.35, // v6.0 Newton-Raphson Sönümleme Katsayısı
+        matrix: [
+          [0, 0, 0, 0],
+          [0, 0, 0, 0],
+          [0, 0, 0, 0],
+          [0, 0, 0, 0]
+        ],
+        P: [],
+        V0: [0, 0, 0, 0],
+        error: {     // v6.0 5D Hata Vektör Bitişikleri
+          e_Close: 0,
+          e_Vol: 0,
+          multiplier: 1.0
+        }
+      };
+    }
+
+    return {
+      // Singleton Örneğini Getir (Yoksa Oluştur)
+      getInstance: function() {
+        if (!instance) {
+          instance = createInstance();
+        }
+        return instance;
+      },
+      // Tab Değişiminde Tekil Örneği ve Cache'i Sıfırla
+      resetInstance: function() {
+        instance = createInstance();
+        delete nextcell.cache; // nextcell önbelleğini temizle
+      }
+    };
+  })(),
+
+  // --- ORİJİNAL GLOBAL DEĞİŞKENLER ---
   oName: [],
   sName: [],
   tupple: {},
@@ -28,6 +68,7 @@ const Trns = {
   ssId: "1zINSfs5yQCysx1bIn0LllK9eIQEkjE2VmnCTx2RH5XI",
   wurl: "https://script.google.com/macros/s/AKfycby5uvkdlQ0YAUEb52UFNQdcNDTI41qbH08q7CO5Ds_f/dev"
 };
+
 /**
  * Dynamic Tab Pointer & Proxy Wrapper
  */
@@ -51,10 +92,13 @@ const Trns = {
       throw new Error("No active tab selected!");
     }
 
+    // TAB DEĞİŞİMİNDE AUTOMATIC SINGLETON SIFIRLAMA
+    Trns.markovState.resetInstance();
+
     return activeSheet;
   }
 
-  // 1. Dynamic Proxy Object Binding for Trns.trs
+  // Dynamic Proxy Object Binding for Trns.trs
   Object.defineProperty(Trns, 'trs', {
     get: function() {
       if (!activeSheet) {
@@ -74,7 +118,7 @@ const Trns = {
     configurable: true
   });
 
-  // 2. Backward-Compatibility Getter for Trns.Name
+  // Backward-Compatibility Getter for Trns.Name
   Object.defineProperty(Trns, 'Name', {
     get: function() {
       if (!activeSheet) {
@@ -86,6 +130,13 @@ const Trns = {
   });
 })();
 
+// Dynamic emptyRow Getter
+Object.defineProperty(Trns, 'emptyRow', {
+  get: function() {
+    return nextcell();
+  },
+  configurable: true
+});
 
 function nextcell(r = 24) {
   if (typeof nextcell.cache === 'undefined') {
@@ -94,18 +145,15 @@ function nextcell(r = 24) {
   return nextcell.cache;
 }
 
-
+/*****************************************************************************/
 const userProp = PropertiesService.getUserProperties()
-
 const GLOBAL_WEEKEND = isWeekend();
-/**
- * The main function that runs every morning, but skips Sundays and Mondays.
- */
-
-
 /*****************************************************************************/
 const flgBt = { FGUNSONU: 0, FHAFTASONU: 1}
 BatchType = flgBt.FGUNSONU
+/** 
+ * The main function that runs every morning, but skips Sundays and Mondays.
+*/
 function triggerFunction() {
   // Skip execution on weekends
   if (GLOBAL_WEEKEND) return 
