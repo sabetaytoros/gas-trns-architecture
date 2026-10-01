@@ -721,4 +721,20 @@ function testSingleton() {
     console.error("Failure: Instances are different.");
   }
 }
+/**
+ * Transposes a 1D array or object values into a 2D column matrix for Google Sheets.
+ * @param {Array|Object} inputData - 1D array or object to convert
+ * @returns {Array<Array>} 2D vertical column matrix [[val1], [val2], ...]
+ */
+function transposeToColumn(inputData) {
+  if (!inputData) return [];
+  
+  var list = Array.isArray(inputData) 
+    ? inputData 
+    : Object.keys(inputData).map(function(k) { return inputData[k]; });
+
+  return list.map(function(val) {
+    return [val];
+  });
+}
 

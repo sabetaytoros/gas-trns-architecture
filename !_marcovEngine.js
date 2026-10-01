@@ -1,4 +1,5 @@
 /**
+ * !_marcovEngine.gs
  * MARKOV ENGINE - SÜRÜM v5.9.8.4
  * - Forward (G-L) Başlık: emptyRow - 11 (Satır 116)
  * - Backtest (N-S) Başlık: emptyRow - 1 (Satır 126)
@@ -154,12 +155,12 @@ function runMarkovEngine(backwardSteps = 22) {
   }
 
   // 5. FORWARD PREDICTION (127 -> 117 G-L SÜTUNLARINA YAZILIR)
-  var anchorRow = emptyRow; // Satır 127
+  var currentTargetRow = emptyRow; // Satır 127
   var baseBarFwd = chronologicalData[totalBars - 1]; 
   var currentBaseClose = Number(baseBarFwd.close);
   var currentState = allStates[totalBars - 1];
   var baseDate = new Date(baseBarFwd.parsedDate);
-
+  
   for (var f = 1; f <= 11; f++) {
     var initStateVecF = getInitialStateVector(currentState);
     var matF = build4x4TransitionMatrix(

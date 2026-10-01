@@ -3,7 +3,7 @@
  */
 
 const ADMIN_EMAIL = Session.getEffectiveUser().getEmail();
-const MAX_EXECUTION_TIME_MS = 4 * 60 * 1000; // 4 minutes
+const MAX_EXECUTION_TIME_MS = 5.3 * 60 * 1000; 
 
 const JOB_INITIALIZED_KEY = 'JOB_INITIALIZED';
 const REMAINING_TABS_KEY = 'REMAINING_TABS_KEY';
@@ -214,71 +214,6 @@ function inspectScriptProperties() {
   Logger.log("--- REMAINING TABS ---");
   Logger.log(remaining ? JSON.parse(remaining) : "No remaining tabs found (Property is empty/deleted)");
 }
-/**
- * Updates a chart's vertical axis bounds using a Low column for min
- * and a High column for max.
- * 
- * @param {string} lowCol Letter of the column containing Low values (e.g., "D").
- * @param {string} highCol Letter of the column containing High values (e.g., "C").
- * @param {number} chartIndex Index of the chart on the sheet (default: 0 for first chart).
- * @param {number} paddingPercent Percentage buffer to add/subtract (default: 0.05 for 5%).
- */
-function updateChartBoundsFromLowHighColumns(startRow = 0, chartIndex = 0, lowCol = "E", highCol = "D", paddingPercent = 0.05) {
-  const charts = Trns.trs.getCharts();
-  if (charts.length <= chartIndex) {
-    Logger.log("No chart found at index " + chartIndex);
-    return;
-  }
-  const se = startRow + 90;
-  const lastRow = Trns.trs.getLastRow() > se ? se : Trns.trs.getLastRow();
 
-  if (lastRow - startRow < 2) {
-    Logger.log("Not enough data rows in sheet.");
-    return;
-  }
-  // 1. Extract Low values from the Low column
-  const lowValues = Trns.sht.getRange(`${lowCol}${startRow}:${lowCol}${lastRow}`)
-    .getValues()
-    .flat()
-    .filter(val => typeof val === 'number' && !isNaN(val));
 
-  // 2. Extract High values from the High column
-  const highValues = Trns.sht.getRange(`${highCol}${startRow}:${highCol}${lastRow}`)
-    .getValues()
-    .flat()
-    .filter(val => typeof val === 'number' && !isNaN(val));
 
-  if (lowValues.length === 0 || highValues.length === 0) {
-    Logger.log("Missing numeric data in specified Low/High columns.");
-    return;
-  }
-
-  // Calculate absolute minimum from Low column and absolute maximum from High column
-  const minLow = Math.min(...lowValues);
-  const maxHigh = Math.max(...highValues);
-
-  // Apply padding percentage
-  const spread = maxHigh - minLow;
-  const buffer = spread === 0 ? Math.abs(minLow) * paddingPercent || 1 : spread * paddingPercent;
-
-  const minBound = Math.floor(minLow - buffer);
-  const maxBound = Math.ceil(maxHigh + buffer);
-
-  // Rebuild the chart with updated vertical axis boundaries
-  const targetChart = charts[chartIndex];
-  const updatedChart = targetChart.modify()
-    .setOption('vAxis.minValue', minBound)
-    .setOption('vAxis.maxValue', maxBound)
-    .build();
-
-  Trns.trs.updateChart(updatedChart);
-  Logger.log(` Rows (Start ${startRow} End ${lastRow}) Chart [${chartIndex}] updated -> Min: ${minBound} (from Col ${lowCol}), Max: ${maxBound} (from Col ${highCol})`);
-}
-
-/**
- * Example execution wrapper
- */
-function runLowHighUpdate() {
-  // Pass Low column "E", High column "D", Chart index 0, 5% padding
-  updateChartBoundsFromLowHighColumns(102);
-}

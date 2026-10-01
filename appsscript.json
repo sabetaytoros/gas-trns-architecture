@@ -28,6 +28,15 @@
     }, {
       "menuName": "moverowData",
       "functionName": "moverowData"
+    }, {
+      "menuName": "cerceve",
+      "functionName": "cerceve"
+    }, {
+      "menuName": "MoveDate",
+      "functionName": "MoveDate"
+    }, {
+      "menuName": "copyG",
+      "functionName": "copyG"
     }]
   }
 }

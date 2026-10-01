@@ -68,6 +68,30 @@ const Trns = {
   ssId: "1zINSfs5yQCysx1bIn0LllK9eIQEkjE2VmnCTx2RH5XI",
   wurl: "https://script.google.com/macros/s/AKfycby5uvkdlQ0YAUEb52UFNQdcNDTI41qbH08q7CO5Ds_f/dev"
 };
+// --- 0_Global.gs İçine Eklenebilecek MACD ve Grafik Sabitleri ---
+Trns.CONFIG = {
+  // MACD Gösterge Parametreleri
+  FAST_EMA: 12,
+  SLOW_EMA: 26,
+  SIGNAL_EMA: 9,
+
+  // Markov Motoru ve Veri Boyutu Parametreleri
+  WINDOW_SIZE: 22,                       // Markov pencere boyutu (1 işlem ayı)
+  TOTAL_BARS: 46,                        // EMA26 ısınma payı + 22 bar Markov matrisi
+  MIN_REQUIRED_BARS: 22                  // İşlem yapmak için gereken minimum bar sayısı
+};
+// Google Sheets Candlestick için zorunlu sütun sırası: Low, Open, Close, High
+// Bize gereken veri sütun aralıkları (örnek varsayılanlar):
+Trns.INDICATOR_COLS = {
+  DATE: 1,      // Sütun A: Tarih
+  LOW: 2,       // Sütun B: Low
+  OPEN: 3,      // Sütun C: Open
+  CLOSE: 4,     // Sütun D: Close
+  HIGH: 5,      // Sütun E: High
+  MACD: 7,      // Sütun G: MACD Line
+  SIGNAL: 8,    // Sütun H: Signal Line
+  HISTOGRAM: 9  // Sütun I: MACD Histogram
+};
 
 /**
  * Dynamic Tab Pointer & Proxy Wrapper
@@ -93,7 +117,8 @@ const Trns = {
     }
 
     // TAB DEĞİŞİMİNDE AUTOMATIC SINGLETON SIFIRLAMA
-    Trns.markovState.resetInstance();
+    if (Trns.markovState && typeof Trns.markovState.resetInstance === 'function') 
+      Trns.markovState.resetInstance();
 
     return activeSheet;
   }
@@ -141,10 +166,38 @@ Object.defineProperty(Trns, 'emptyRow', {
 function nextcell(r = 24) {
   if (typeof nextcell.cache === 'undefined') {
     nextcell.cache = singleNext(r)
+    Trns.empty = nextcell.cache - 1; // Boş satırın bir önceki satırı (Örn: 127 - 1 = 126)
+    Trns.emptyRow = nextcell.cache;  // Doğrudan boş satır numarası (Örn: 127)
   }
   return nextcell.cache;
 }
+// RowContext Singleton Tanımı (const olarak global düzeyde)
+const RowContext = (function () {
+  var instance;
 
+  function createInstance() {
+    return {
+      // Varsayılan satır indeksleri / bağlam değerleri
+      startRow: 0,
+      endRow: 0,
+      currentRow: 0,
+      reset: function () {
+        this.startRow = 0;
+        this.endRow = 0;
+        this.currentRow = 0;
+      }
+    };
+  }
+
+  return {
+    getInstance: function () {
+      if (!instance) {
+        instance = createInstance();
+      }
+      return instance;
+    }
+  };
+})();
 /*****************************************************************************/
 const userProp = PropertiesService.getUserProperties()
 const GLOBAL_WEEKEND = isWeekend();

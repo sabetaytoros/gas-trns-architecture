@@ -1,20 +1,137 @@
 /*****************************************************************************/
 // gunSonu.gs
 /*****************************************************************************/
-const flgEnum = { FSTRT: 0, FCONT: 1, FTIMEOUT: 2, FEND: 3, FHLDY: 4, FGNSON: 5, FERGNSON: 6, FIDLE : 7, FPLVSTRT : 8, FPLVEND : 9, FDAYINIT : 10}
-const flgName = ["FSTRT", "FCONT", "FTIMEOUT", "FEND","FHLDY","FGNSON", "FERGNSON", "FIDLE", "FPLVSTRT","FPLVEND","FDAYINIT"];
+const flgEnum = { FSTRT: 0, FCONT: 1, FTIMEOUT: 2, FEND: 3, FHLDY: 4, FGNSON: 5, FERGNSON: 6, FIDLE: 7, FPLVSTRT: 8, FPLVEND: 9, FDAYINIT: 10 }
+const flgName = ["FSTRT", "FCONT", "FTIMEOUT", "FEND", "FHLDY", "FGNSON", "FERGNSON", "FIDLE", "FPLVSTRT", "FPLVEND", "FDAYINIT"];
 const GSMAX_RUNNING_TIME = 5.5 * 60 * 1000
 const EPS_TIME = 60000
+function patchDateEnd() {
+  /*Trns.sht.getSheets().forEach(function (s) {
+    s.activate()
+    var i = exclude.indexOf(s.getName());
+    if (i == -1) {*/
+      Trns.trs()
+      r = nextcell() - 1
+      s = Trns.trs.getRange(13, Trns.kbr, 1, 1).getA1Notation()
+      let sf = '=GOOGLEFINANCE($B$1,"all",' + s + '-9,' + s + ')'
+      Trns.trs.getRange('N' + r).setFormula(sf)
+      // Logger.log('kbr %s rw %s s %s sf %s', Trns.kbr, r, s,sf)
+      return
+      Trns.trs.getRange('N' + r).setFormula(sf)
+      ++r
+      sf = Trns.trs.getRange(r, 1, 9, 6).getA1Notation()
+      s = 'N' + r
+      formatRange(sf, s)
+    /*}
+  })*/
+}
+function patchLowHight() {
+  Trns.sht.getSheets().forEach(function (s) {
+    s.activate()
+    var i = exclude.indexOf(s.getName());
+    if (i == -1) {
+      Trns.trs()
+      dst = Trns.trs.getRange(2, Trns.kbr).getA1Notation()
+      copyCell('F2:F6', dst)
+      m = Trns.kbr - 1
+      dst = Trns.trs.getRange(2, m).getA1Notation()
+      copyCell('F2:F6', dst)
+    }
+  })
+}
+function testperiod() {
+  Trns.trs()
+  //Logger.log('Id = %s', Trns.sht.getName())
+  Trns.sName = Trns.trs.getName()
+  Trns.ord = Trns.sht.getSheets()[Orders]; // Order Sheet 
+  Logger.log('shtName %s ordNAME %s', Trns.sName, Trns.ord.getName())
 
+  //CommonProcess()
+  return
+  //newPeriod( Trns.kbr )
+
+  ac = columnLetterToNumber('Fk')
+  Logger.log('ac %s ', ac)
+
+  // ac = 156
+  cn = '$' + columnToLetter(ac) + '$15'
+
+  Logger.log('cn %s', cn)
+
+  for (i = ac - 1; i > columnLetterToNumber('J'); --i) {
+    s = '= (' + columnToLetter(i) + '15 - ' + cn + ') / ' + cn
+    Logger.log('i %s s %s', i, s)
+    Trns.trs.getRange(16, i).setValue(s)
+    if (newPeriod(i))
+      cn = '$' + columnToLetter(c + 1) + '$15'
+  }
+
+
+}
+function patchMoveDate() {
+  Trns.sht.getSheets().forEach(function (s) {
+    s.activate()
+    var i = exclude.indexOf(s.getName());
+    if (i == -1) {
+      pMove()
+
+    }
+  })
+}
+function pMove() {
+  Trns.trs()
+  moveRange('F16:F17', 'F19')
+  moveRange('F7:F12', 'F13')
+  moveRange('G7:G12', 'F7')
+}
+function patchRenderChart() {
+  Trns.sht.getSheets().forEach(function (s) {
+    s.activate()
+    var i = exclude.indexOf(s.getName());
+    if (i == -1) {
+        testChartDriver() 
+    }
+  })
+}
+function patchdate() {
+  Trns.sht.getSheets().forEach(function (s) {
+    s.activate()
+    var i = exclude.indexOf(s.getName());
+    if (i == -1) {
+      Trns.trs()
+      delete nextcell.cache
+      var r = nextcell()
+      var sr = 'A' + r
+      srng = Trns.trs.getRange(13, Trns.kbr).getA1Notation()
+      copyCell(srng,sr)
+      let sf = '=INDEX(GOOGLEFINANCE($B$1,"volume",' + sr + ',' + sr + '),2,2)'
+      sr = 'F' + r
+      Logger.log('Name %s sf %s sr %s', Trns.Name, sf, sr)
+      Trns.trs.getRange(sr).setValue(sf)
+    }
+  })
+}
+
+function patchChart() {
+  Trns.trs()
+  Trns.trs.getRange(Trns.emptyRow, 1, Trns.trs.getLastRow(), 1).setNumberFormat("@");
+ // setChart(7)
+
+}
+
+function testMarcovEngine() {
+  Trns.trs()
+  drvEngineEnhancedDashboard()
+}
 function testyahoo() {
   Trns.trs()
-  getYahooVolume(Trns.trs.getRange(B1).getValue(),Trns.trs.getRange('A104').getValue())
+  getYahooVolume(Trns.trs.getRange(B1).getValue(), Trns.trs.getRange('A104').getValue())
 }
-function testHoliday(){
+function testHoliday() {
   Trns.trs()
   Trns.Holiday = isHoliday()
-  Logger.log('Trns.Holiday '+ Trns.Holiday)
-  Logger.log('kbrG1 '+ Trns.Kbr)
+  Logger.log('Trns.Holiday ' + Trns.Holiday)
+  Logger.log('kbrG1 ' + Trns.Kbr)
   // processHoliDay() 
 
 }
@@ -41,11 +158,11 @@ function test_Trns_Active_And_Hardcoded() {
 
   // --- 1. AŞAMA: Aktif Sayfayı Otomatik Yakalama ---
   // Parantez içi boş bırakıldığında açık olan aktif sekmeyi alır
-  Trns.trs(); 
-  
+  Trns.trs();
+
   const activeName = Trns.trs.getName();
   const activeLastRow = Trns.trs.getLastRow();
-  
+
   console.log("1. Aktif Sayfa Yakalandı:");
   console.log("   - Sayfa Adı: " + activeName);
   console.log("   - Son Satır: " + activeLastRow);
@@ -53,15 +170,15 @@ function test_Trns_Active_And_Hardcoded() {
   // --- 2. AŞAMA: Hard-coded 'Kebir' Sayfasına Geçiş ---
   // İsmen 'Kebir' sekmesini seçer ve hedefi günceller
   Trns.trs('Kebir');
-  
+
   const kebirName = Trns.trs.getName();
   const kebirCrc = Trns.trs.getRange('G1').getValue();
-  
+
   console.log("2. 'Kebir' Sayfasına Geçildi:");
   console.log("   - Sayfa Adı: " + kebirName);
   console.log("   - G1 Değeri: " + kebirCrc);
 
-  console.log('ORCL in adi '+Trns.trs('ORCL').getName())
+  console.log('ORCL in adi ' + Trns.trs('ORCL').getName())
   console.log("=== TÜM TESTLER BAŞARIYLA TAMAMLANDI ===");
 }
 
@@ -95,16 +212,16 @@ function test_Trns_Architecture() {
 function drvFunction() {
   const scriptCache = CacheService.getScriptCache()
   scriptCache.remove('procSec')
-  
- setPropertyActiveSheet(9)
+
+  setPropertyActiveSheet(9)
 
   // processSecurityGunsonu(flgEnum.FCONT)
 
- // gunSonuIslemleri()
- // updateKebirPage()
- // Trns.trs = Trns.sht.getActiveSheet(); 
- // Trns.Name = Trns.trs.getSheetName() 
- // updateChartBoundsFromLowHighColumns(nextcell()+1)
+  // gunSonuIslemleri()
+  // updateKebirPage()
+  // Trns.trs = Trns.sht.getActiveSheet(); 
+  // Trns.Name = Trns.trs.getSheetName() 
+  // updateChartBoundsFromLowHighColumns(nextcell()+1)
 }
 
 function testnChart() {
@@ -112,55 +229,26 @@ function testnChart() {
   //Trns.bindTab(Trns.sht.getActiveSheet()) 
   Trns.Name = Trns.trs.getSheetName()
   Logger.log('Name %s', Trns.Name)
-  updateRange( nextcell()-1)
+  updateRange(nextcell() - 1)
 }
 
 function tesChart() {
-  Trns.trs = Trns.sht.getActiveSheet();  
+  Trns.trs = Trns.sht.getActiveSheet();
   Trns.Name = Trns.trs.getSheetName()
   //Trns.bindTab(Trns.sht.getActiveSheet()) 
   setChart()
   sr = nextcell() - 1
   Trns.trs.getRange(sr, 1).activate();
   Trns.trs.getSelection()
-      .getNextDataRange(SpreadsheetApp.Direction.DOWN).activate();
-  rng = Trns.trs.getRange(sr, 1, Trns.trs.getActiveRange().getLastRow() -sr +1, 5).getA1Notation() 
+    .getNextDataRange(SpreadsheetApp.Direction.DOWN).activate();
+  rng = Trns.trs.getRange(sr, 1, Trns.trs.getActiveRange().getLastRow() - sr + 1, 5).getA1Notation()
   Logger.log('rng %s LastRow %s', rng, Trns.trs.getActiveRange().getLastRow())
 
-//  createChart(rng,8.00, 13)
+  //  createChart(rng,8.00, 13)
 }
 /*****************************M***********************************************/
 
-function testperiod() {
-  //Trns.sht = SpreadsheetApp.getActiveSpreadsheet()
-  //Logger.log('Id = %s', Trns.sht.getName())
-  //Trns.bindTab(Trns.sht.getActiveSheet()) 
-  Trns.trs()
-  Trns.sName = Trns.trs.getName()  
-  Trns.ord = Trns.sht.getSheets()[Orders]; // Order Sheet 
-  Logger.log('shtName %s ordNAME %s', Trns.sName, Trns.ord.getName())
-  CommonProcess()
-  return
-  //newPeriod( Trns.kbr )
 
-    ac = columnLetterToNumber('Fk')
-    Logger.log('ac %s ', ac)
-
-   // ac = 156
-      cn = '$' + columnToLetter(ac) +  '$15'
-
-  Logger.log('cn %s',cn )
-
-  for(i=ac-1; i > columnLetterToNumber('J'); --i ){
-    s = '= (' + columnToLetter(i)+ '15 - '+ cn +') / ' + cn    
-    Logger.log('i %s s %s',i, s)
-    Trns.trs.getRange(16,i).setValue(s)
-    if (newPeriod(i)) 
-      cn = '$' + columnToLetter(c+1) + '$15'
-   }
-  
- // processLowHigh()
-}
 
 
 /****************************************************************************/
@@ -168,34 +256,34 @@ function CommonProcess() {
   delete nextcell.cache;
   setOrderRow()
   processLowHigh();
-  newPeriod(Trns.kbr )
+  newPeriod(Trns.kbr)
   processDateBlock(Trns);
   Trns.trs.getRange('E1').setValue(new Date())
   setCycle()
   setChart()
   testupdateLastTransaction()
   //defineQuarters()
-  runMarkovEngine()
+  EnhancedDashboard()
   Logger.log('CommonProcess bitti')
 }
 /****************************************************************************/
 function setPropertyActiveSheet(No) {
   var sNo = No.toString()
   userProp.setProperty('ACTIVE_SHEETNO', sNo)
-  Logger.log('ACTIVE_SHEETNo %s',parseInt(userProp.getProperty('ACTIVE_SHEETNO')) )
+  Logger.log('ACTIVE_SHEETNo %s', parseInt(userProp.getProperty('ACTIVE_SHEETNO')))
 }
 
 /****************************************************************************/
 function setStartingActiveSheet(shtNo = 4) {
-  if (logProp('GUNSONU_PRC',false) == flgEnum.FCONT) {
-    Logger.log(' Buraya Niye buraya geldik' )  
+  if (logProp('GUNSONU_PRC', false) == flgEnum.FCONT) {
+    Logger.log(' Buraya Niye buraya geldik')
     Logger.log('Caller Name %s', setStartingActiveSheet.caller.name);
-    return 
-  }  
+    return
+  }
   Trns.trs = Trns.sht.getSheets()[shtNo]
   //Trns.bindTab(Trns.sht.getSheets()[shtNo])
   setPropertyActiveSheet(shtNo)
-  logProp('GUNSONU_PRC', flgEnum.FSTRT,false)
+  logProp('GUNSONU_PRC', flgEnum.FSTRT, false)
   var info = {}
   info.flg = logProp('GUNSONU_PRC')
   Logger.log(' info.flg  %s ', info.flg)
@@ -205,7 +293,7 @@ function gunSonuIslemleri() {
   try {
     //Trns.sht = SpreadsheetApp.openById(Trns.ssId)
     info = {}
-    info.flg = logProp('GUNSONU_PRC',false)
+    info.flg = logProp('GUNSONU_PRC', false)
     if (info.flg == flgEnum.FSTRT) {
       setProp('POLL_VALUES', flgEnum.FPLVEND, false);
       Trns.pollValues = false
@@ -214,17 +302,17 @@ function gunSonuIslemleri() {
       var datum = new Date()
       var d = datum.getDay()
       Logger.log(' d %s ', d)  // && d != 7
-      if (d != 7 ) { 
+      if (d != 7) {
         Trns.Holiday = isHoliday()
         if (Trns.Holiday) {
           info.flg = flgEnum.FHLDY
           Logger.log(' Eger pH bitmez is HTML in pHolidayi calistirmasi gerek')
         } else {
           getSecNamesfromOrderSheet()
-          orderSnapShot()    
-        }          
-        setProp('GUNSONU_PRC', flgEnum.FCONT,false)   
-        createUniInfo(flgEnum.FCONT, " Gunsonu Islemleri tamamlandi " )   
+          orderSnapShot()
+        }
+        setProp('GUNSONU_PRC', flgEnum.FCONT, false)
+        createUniInfo(flgEnum.FCONT, " Gunsonu Islemleri tamamlandi ")
         return processSecurityGunsonu(flgEnum.FCONT)
       }
     }
@@ -253,16 +341,16 @@ function enSureGunSonu() {
 function processHoliDay() {
   if (Trns.trs.getRange('E1').isBlank()) {
     Logger.log('Name %s', Trns.trs.getName())
-    var c = Trns.kbr - 1   
-    srng = Trns.trs.getRange(13,c).getA1Notation()
+    var c = Trns.kbr - 1
+    srng = Trns.trs.getRange(13, c).getA1Notation()
     copyCell(srng, 'E1')
     Trns.trs.getRange(13, Trns.kbr).deleteCells(SpreadsheetApp.Dimension.COLUMNS);
-    Trns.trs.getRange(14, c , 7, 1)
+    Trns.trs.getRange(14, c, 7, 1)
       .deleteCells(SpreadsheetApp.Dimension.COLUMNS);
-    Trns.trs.getRange(2, c , 5, 1)
+    Trns.trs.getRange(2, c, 5, 1)
       .deleteCells(SpreadsheetApp.Dimension.COLUMNS);
     delete nextcell.cache;
-    copyCell(srng,('A'+nextcell()))
+    copyCell(srng, ('A' + nextcell()))
   }
 }
 /*****************************************************************************/
@@ -275,9 +363,9 @@ function haftaSonu() {
   //Trns.sht = SpreadsheetApp.getActive();
   var allsheets = Trns.sht.getSheets();
   for (var s in allsheets) {
-   Trns.trs = allsheets[s];
-   //Trns.bindTab(allsheets[s])
-   Trns.sht.setActiveSheet(Trns.trs);
+    Trns.trs = allsheets[s];
+    //Trns.bindTab(allsheets[s])
+    Trns.sht.setActiveSheet(Trns.trs);
     var Name = Trns.trs.getName();
     var i = exclude.indexOf(Name);
     if (i == -1) {
@@ -315,12 +403,12 @@ const DAYTIME = 24 * 3600 * 1000
 
 /****************************************************************************/
 function isHoliday() {
-  if (BatchType == flgBt.FHAFTASONU) return false 
+  if (BatchType == flgBt.FHAFTASONU) return false
   for (s = 4; s < 7; s++) {
     Trns.trs = Trns.sht.getSheets()[s];
     v = abs(Trns.trs.getRange(14, Trns.kbr).getValue())
     if (v > 0.000) return false
-  }    
+  }
   return true
 }
 /****************************************************************************/
@@ -362,7 +450,7 @@ function formatRange(src, dst) {
 }
 /***************************************************************************/
 function copyFormatRange(src, dst) {
-//  Logger.log('src %s dst %s', src, Trns.trs.getActiveRange().getA1Notation())
+  //  Logger.log('src %s dst %s', src, Trns.trs.getActiveRange().getA1Notation())
   Trns.trs.getRange(dst).activate()
   Trns.trs.getRange(src).copyTo(Trns.trs.getActiveRange()
     , SpreadsheetApp.CopyPasteType.PASTE_VALUES, false);
@@ -442,15 +530,16 @@ function singleNext(r) {
 };
 
 /************************************************************************************************/
-function setChart() {
+
+function setChart(clmn = Trns.kbr - 1) {
   var sr = nextcell()
-  src = Trns.trs.getRange(13, Trns.kbr - 1).getA1Notation()
+  src = Trns.trs.getRange(13, clmn).getA1Notation()
   let sd = new Date(Trns.trs.getRange(src).getValue())
   let cd = new Date(Trns.trs.getRange(sr, 1).getValue())
   //Logger.log('sd %s cd %s ', sd, cd)
   if (!isequalDate(sd, cd)) {
     let sr1 = sr + 1
-    let s = 'A' + sr1 + ':K' + sr1
+    let s = 'A' + sr1 + ':F' + sr1
     //Logger.log('setChart()\n rng %s s %s  ', Trns.trs.getRange(s).getA1Notation(), s)
     const rng = Trns.trs.getRange(s);
     const expandedRange = rng.getMergedRanges();
@@ -462,38 +551,38 @@ function setChart() {
     Trns.trs.getRange(s).insertCells(SpreadsheetApp.Dimension.ROWS);
     copyFormatRange(Trns.trs.getRange(sr, 1, 1, 11).getA1Notation()
       , Trns.trs.getRange(sr1, 1).getA1Notation())
-    src = Trns.trs.getRange(13, Trns.kbr - 1).getA1Notation()
+    src = Trns.trs.getRange(13, clmn).getA1Notation()
     dst = Trns.trs.getRange(sr, 1).getA1Notation()
-   // Logger.log("src %s dst %s",src,dst)
+    // Logger.log("src %s dst %s",src,dst)
     copyCell(src, dst)
-/*     s ='A' + sr
-    s = '= TEXT(' + s +',"dd,mm,yy")'
-    src = 'B' +sr
-    Trns.trs.getRange(src).setValue(s)
-    updateRange(sr-1)
-    updateChartBoundsFromLowHighColumns(sr-1)*/
+    r = nextcell() - 1
+    s = Trns.trs.getRange(13, Trns.kbr, 1, 1).getA1Notation()
+    let sf = '=GOOGLEFINANCE($B$1,"all",' + s + '-9,' + s + ')'
+    Trns.trs.getRange('N' + r).setFormula(sf)
+      // Logger.log('kbr %s rw %s s %s sf %s', Trns.kbr, r, s,sf)
   }
   Logger.log('setChart Bitti ')
 }
-function updateRange(sr) {
-    ser = sr+90
-    const lastRow = Trns.trs.getLastRow();
-    if (lastRow < ser) ser  = lastRow
-    s = 'B' + sr + ':F' + ser
-    // Get all charts on the sheet
-    var charts = Trns.trs.getCharts();
-    // Select the first chart (change index if needed)
-    var chart = charts[0];
-    // Define the new data range 
-    var newRange = Trns.trs.getRange(s);
-    // Modify the chart's data range
-    var newChart = chart.modify()
-      .clearRanges()
-      .addRange(newRange)
-      .build();
 
-    // Update the chart on the sheet
-    Trns.trs.updateChart(newChart);
+function updateRange(sr) {
+  ser = sr + 90
+  const lastRow = Trns.trs.getLastRow();
+  if (lastRow < ser) ser = lastRow
+  s = 'A' + sr + ':E' + ser
+  // Get all charts on the sheet
+  var charts = Trns.trs.getCharts();
+  // Select the first chart (change index if needed)
+  var chart = charts[0];
+  // Define the new data range 
+  var newRange = Trns.trs.getRange(s);
+  // Modify the chart's data range
+  var newChart = chart.modify()
+    .clearRanges()
+    .addRange(newRange)
+    .build();
+
+  // Update the chart on the sheet
+  Trns.trs.updateChart(newChart);
 }
 /****************************************************************************/
 function processSecurityGunsonu(flg) {
@@ -501,7 +590,7 @@ function processSecurityGunsonu(flg) {
   const scriptCache = CacheService.getScriptCache()
   //Trns.sht = SpreadsheetApp.openById(Trns.ssId)
   if (logProp('GUNSONU_PRC') == flgEnum.FEND) {
-    return  createUniInfo(flgEnum.FEND, ' ProcessSecurityGunSonu finished')
+    return createUniInfo(flgEnum.FEND, ' ProcessSecurityGunSonu finished')
   }
   if (scriptCache.get('procSec')) {
     Logger.log('scriptCache exist')
@@ -510,7 +599,7 @@ function processSecurityGunsonu(flg) {
 
   //Ara = true
   try {
-    info ={}
+    info = {}
     scriptCache.put('procSec', 'exist', 400000)
     Logger.log('ScritpCache init Edildi %s ', scriptCache.get('procSec'))
     var sTime = new Date()
@@ -519,7 +608,7 @@ function processSecurityGunsonu(flg) {
     var lock = LockService.getScriptLock()
     // Logger.log(' has lock %s', lock.haslock)
     // flg = true terminate false continue  
-    infoObject.status = "lock Active " 
+    infoObject.status = "lock Active "
     if (!lock.tryLock(60000)) return infoObject
     Trns.ord = Trns.sht.getSheets()[Orders]; // Order Sheet 
     getSecNamesfromOrderSheet()
@@ -551,24 +640,24 @@ function processSecurityGunsonu(flg) {
           } else
             CommonProcess()
         }
-        if (s+1 <= alls.length)
+        if (s + 1 <= alls.length)
           setPropertyActiveSheet(s + 1)
       }
       //  Logger.log("info flg %s Name %s", info.flg, info.scrty)
     }
-    if (checkifnoSet('GUN_SONUUPDATE', flgEnum.FEND) || checkMissingDay()) 
+    if (checkifnoSet('GUN_SONUUPDATE', flgEnum.FEND) || checkMissingDay())
       updateKebirPage();
 
     scriptCache.remove('procSec')
-    return info  
+    return info
   }
 
-  
+
   catch (e) {
     scriptCache.remove('procSec')
     lock.releaseLock()
     info.flg = flgEnum.FCONT
-    info.scrty += 'processSecurityGunsonu Exception ' + e.message + ' Stack ; '+ e.stack
+    info.scrty += 'processSecurityGunsonu Exception ' + e.message + ' Stack ; ' + e.stack
     Logger.log('processSecurityGunsonu Exception : %s\n Stack : %s', e.message, e.stack)
     s = getStartingPoint() + 1
     Logger.log('starting point %s info %s', s, info)
@@ -585,8 +674,8 @@ function checkMissingDay() {
 }
 function updateTrh(c) {
   src = Trns.trs.getRange(13, c).getA1Notation()
-  // Logger.log('Tarih update edilir')
-  copyCell(src,'H7')
+ //Logger.log('Tarih update edilir src %s value %s', src, Trns.trs.getRange(src).getValue())
+  copyCell(src, 'H7')
   updateDayDif()
 }
 function newPeriod(crc) {// previos column
@@ -605,8 +694,8 @@ function newPeriod(crc) {// previos column
     if (lgo > 0) { // Last Gunluk oran pozitif
       updateTrh(crc)
       if (lva > pva) {
-        src = Trns.trs.getRange(15,crc,2,1).getA1Notation()
-        copyFormatRange(src,'H8')
+        src = Trns.trs.getRange(15, crc, 2, 1).getA1Notation()
+        copyFormatRange(src, 'H8')
         // Logger.log('Periodun valuesu ve toplam orani update edilir')
       } else {
         // Logger.log(' last value  period val dan kucuk bir sey yapilmaz')
@@ -614,34 +703,34 @@ function newPeriod(crc) {// previos column
     } else {
       if (orn < -0.03) {
         // Logger.log('Yeni oran %sYeni Period eklenir ', orn)
-        insertNewPeriod(crc,pva) 
-        return     
+        insertNewPeriod(crc, pva)
+        return
       } else {
         // Logger.log('Yeni oran 0.03 ten kucuk sadece Periodun Tarihi update edilir ')
         updateTrh(crc)
       }
     }
-  }  else { // Period ratio negatif
+  } else { // Period ratio negatif
     if (lgo < 0) { //lst gunluk oran negatif
       updateTrh(crc) // Current column
       if (lva < pva) { // Last value Periodun valuesundan kucuk
-        src = Trns.trs.getRange(15,crc,2,1).getA1Notation()
-        copyFormatRange(src,'H8')
+        src = Trns.trs.getRange(15, crc, 2, 1).getA1Notation()
+        copyFormatRange(src, 'H8')
         // Logger.log('Periodun valuesu ve toplam orani update edilir')
       } else {
-          // Logger.log('orn 0.03 kucuk sadece Periodun Tarihi degisir')
+        // Logger.log('orn 0.03 kucuk sadece Periodun Tarihi degisir')
       }
     } else {
       if (orn > 0.03) {
         // Logger.log('Yeni oran %sYeni Period eklenir ', orn)
-        insertNewPeriod(crc,pva) 
-        return     
+        insertNewPeriod(crc, pva)
+        return
       } else {
         // Logger.log('Yeni oran 0.03 ten buyuk sadece Periodun Tarihi update edilir ')
         updateTrh(crc)
-      }      
+      }
     }
-  } 
+  }
   return false
 }
 function columnLetterToNumber(columnLetter) {
@@ -661,13 +750,13 @@ function columnToLetter(column) {
   }
   return letter;
 }
-function insertNewPeriod(c,pva) {
- //  Logger.log('insert new Period c = %s pva %s',c, pva)
+function insertNewPeriod(c, pva) {
+  //  Logger.log('insert new Period c = %s pva %s',c, pva)
   let sc = c
-  for(;;) {
+  for (; ;) {
     //Logger.log(' v = %s',Trns.trs.getRange(15,c).getDisplayValue())
-    if(Trns.trs.getRange(15,c).getDisplayValue() == pva) break;
-    ++c 
+    if (Trns.trs.getRange(15, c).getDisplayValue() == pva) break;
+    ++c
     //Logger.log('for icinde c %s',c)
   }
   updateTrh(c)
@@ -675,15 +764,15 @@ function insertNewPeriod(c,pva) {
   // Logger.log('c %s',cn)
   while (c > sc) {
     --c
-    s = '= (' + columnToLetter(c)+ '15 - '+ cn +') / ' + cn
+    s = '= (' + columnToLetter(c) + '15 - ' + cn + ') / ' + cn
     // Logger.log('s %s',s)
-    Trns.trs.getRange(16,c).setValue(s)
+    Trns.trs.getRange(16, c).setValue(s)
   }
   Trns.trs.getRange('H7:H12').insertCells(SpreadsheetApp.Dimension.COLUMNS);
   // Logger.log('sc %s',c)
   updateTrh(c)
-  src = Trns.trs.getRange(15,sc,2,1).getA1Notation()
-  copyCell(src,'H8')
+  src = Trns.trs.getRange(15, sc, 2, 1).getA1Notation()
+  copyCell(src, 'H8')
   updateDayDif()
 }
 
@@ -743,7 +832,7 @@ function predictionBuySell() {
   //Ara = true
   var data = Trns.trs.getRange('H8:J8').getValues();
   Trns.nval = Trns.vrng.getValue()
-  Logger.log('predictionBuySell Trn.nval %s',Trns.nval)
+  Logger.log('predictionBuySell Trn.nval %s', Trns.nval)
   if (testSimple(data)) {
     //    LoggerAlert(sprintf(' Test Simple true UpdateH calisacak'))
     updateH()
@@ -810,7 +899,7 @@ function updateDayDif() {
   var rDate = new Date(Trns.trs.getRange('I7').getValue());
   var diffInDays = Math.floor((lDate.getTime() - rDate.getTime())
     / (DAYTIME));
- // Logger.log('lD %s rD %s diff %s',lDate,rDate,diffInDays)
+  // Logger.log('lD %s rD %s diff %s',lDate,rDate,diffInDays)
   Trns.trs.getRange('H10').setValue(diffInDays)
 }
 /*****************************************************************************/
@@ -914,7 +1003,7 @@ function updateH() {
   }
 }
 /******************************************************************************/
- function A1Ratio(ra, rb) {
+function A1Ratio(ra, rb) {
   var a = Trns.trs.getRange(ra).getValue()
   var b = Trns.trs.getRange(rb).getValue()
   var r = (a - b) / b
@@ -986,7 +1075,7 @@ function processDateBlock(Trns) {
 }
 
 /*****************************************************************************/
-function transactionRatios () {
+function transactionRatios() {
   var RTrns = AbsGetUnvRange(Trns, 18, Trns.kbr)
   //  Logger.log('transactionRatios RTrns %s', Trns.trs.getRange(RTrns).getA1Notation())
   if (Trns.trs.getRange(RTrns).isBlank())
@@ -1016,37 +1105,37 @@ function updateKebirPage() {
   var cv = BatchType == flgBt.FGUNSONU ? Trns.kbr - 1 : 12
   Trns.sht.getRange('Kebir!G1').setValue(cv);
   Logger.log('yeni cv ' + Trns.sht.getRange('Kebir!G1').setValue(cv))
-  setProp("GUNSONU_PRC",flgEnum.FEND,false)
-  setProp('POLL_VALUES', flgEnum.FPLVSTRT,false)  
-  setProp('IDLE.STATE', flgEnum.FIDLE,false)
-  setProp('SESION_TRIG', flgEnum.FSTRT,false)
-  setProp('DAY_START',flgEnum.FSTRT,false)
-  setProp('CLOSE_WIN', flgEnum.FSTRT,false)
-  setProp('UPDATE_KEBIR_PAGE',flgEnum.FEND, true)
-  Logger.log('updateKebirPage procSecGunSonu bitti value &s callername  %s', 
+  setProp("GUNSONU_PRC", flgEnum.FEND, false)
+  setProp('POLL_VALUES', flgEnum.FPLVSTRT, false)
+  setProp('IDLE.STATE', flgEnum.FIDLE, false)
+  setProp('SESION_TRIG', flgEnum.FSTRT, false)
+  setProp('DAY_START', flgEnum.FSTRT, false)
+  setProp('CLOSE_WIN', flgEnum.FSTRT, false)
+  setProp('UPDATE_KEBIR_PAGE', flgEnum.FEND, true)
+  Logger.log('updateKebirPage procSecGunSonu bitti value &s callername  %s',
     Trns.sht.getRange('Kebir!G1').getValue(), updateKebirPage.caller.name);
 }
 /*****************************************************************************/
 function checkColor(r, c, v, t) { // row, col,val, {Min or maX}
   try {
-  //  Logger.log('r %s c %s v %s t %s', r,c,v,t )
+    //  Logger.log('r %s c %s v %s t %s', r,c,v,t )
     src = Trns.trs.getRange(r, c, 1, 10).getA1Notation()
-  //  Logger.log('src %s v %s',src, v)
+    //  Logger.log('src %s v %s',src, v)
     let o = findCellValue(Trns.trs, src, v)
-   
-    
+
+
     if (o.r != null && o.c != null) {
       bckc = Trns.trs.getRange(o.r, o.c).getBackgroundColor()
       clr = (t == "M") ? bckclrY : bckclrK
       rng = Trns.trs.getRange(o.r, o.c).getA1Notation()
-    //  Logger.log(' rng %s obj %s bckc %s clr %s', rng, o, bckc, clr)
+      //  Logger.log(' rng %s obj %s bckc %s clr %s', rng, o, bckc, clr)
       if (bckc != clr)
         Trns.trs.getRange(o.r, o.c).setFontColor(fntclr).setBackground(clr)
     } else {
-       Logger.log('CHECK COLOR Error r %s c %s v %s t %s o %s', r,c,v,t, o)
+      Logger.log('CHECK COLOR Error r %s c %s v %s t %s o %s', r, c, v, t, o)
     }
   }
-  catch(e) {
+  catch (e) {
     Logger.log('Excp checkColor err message %s Stack %s', e.message, e.stack);
   }
 }
@@ -1067,16 +1156,16 @@ function processLowHigh() {
     Trns.trs.getRange('D4').setFormula(sFrm) // Previos Day open dif
     dst = Trns.trs.getRange(rlw, m, 1, 10).getA1Notation()
     sFrm = '=min(' + dst + ')'
-    checkColor(rlw,Trns.kbr, Trns.trs.getRange('F7').getDisplayValue(), "M")
-    Trns.trs.getRange('F7').setFormula(sFrm) // Son on gunun Lowu
+    checkColor(rlw, Trns.kbr, Trns.trs.getRange('F7').getDisplayValue(), "M")
+    Trns.trs.getRange('F13').setFormula(sFrm) // Son on gunun Lowu
     sFrm = '=Average(' + dst + ')'
-    Trns.trs.getRange('F16').setFormula(sFrm)  // Lowlarin ortalamasi  
+    Trns.trs.getRange('F14').setFormula(sFrm)  // Lowlarin ortalamasi  
     dst = Trns.trs.getRange(rhg, m, 1, 10).getA1Notation()
     sFrm = 'max(' + dst + ')'
-    Trns.trs.getRange('F8').setFormula(sFrm)
+    Trns.trs.getRange('F15').setFormula(sFrm)
     sFrm = '=Average(' + dst + ')'
-    checkColor(rhg,Trns.kbr,Trns.trs.getRange('F8').getDisplayValue(), "X")
-    Trns.trs.getRange('F17').setFormula(sFrm)
+    checkColor(rhg, Trns.kbr, Trns.trs.getRange('F8').getDisplayValue(), "X")
+    Trns.trs.getRange('F16').setFormula(sFrm)
     formatRange('B3', 'F7:F8')
     formatRange('B3', 'F16:F17')
     // verify today Loww and High
